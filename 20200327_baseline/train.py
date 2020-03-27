@@ -12,9 +12,9 @@ import pandas as pd
 # from wrmsse import bild_WRMSSEEvaluator, WRMSSEEvaluator_learge
 from reduce_mem import reduce_mem_usage
 
-decide_x_feature = True
+decide_x_feature = False
 
-result_dir = './result/baseline_retry'
+result_dir = './result/baseline_retry_use_all_feature'
 os.makedirs(result_dir, exist_ok=True)
 
 ########################
@@ -68,7 +68,7 @@ print('before_date_shape:{}'.format(df_all.shape))
 
 df_all['date'] = pd.to_datetime(df_all['date'])
 # 対象
-attrs = ["year", "month", "dayofweek"]
+attrs = ["year", "month", "dayofweek", "is_year_end", "is_year_start"]
 # is_year_end, is_year_srart
 
 for attr in attrs:
@@ -91,8 +91,7 @@ target_col = 'demand'
 useless_cols = ['id', 'part',
                 'date', 'wm_yr_wk', 'quarter', 'week', 'day',
                 'is_quarter_end', 'is_quarter_start',
-                'is_month_end', 'is_month_start',
-                'is_year_end', 'is_year_start']
+                'is_month_end', 'is_month_start']
 # use: year, month, dayofweek, is_year_end, is_year_start, is_weekend
 x_features = [col for col in df_all.columns if col not in list(useless_cols + [target_col])]
 
