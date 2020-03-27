@@ -12,10 +12,11 @@ import pandas as pd
 # from wrmsse import bild_WRMSSEEvaluator, WRMSSEEvaluator_learge
 from reduce_mem import reduce_mem_usage
 
-decide_x_feature = False
+decide_x_feature = True
 
-result_dir = './result/baseline_add_shop_price'
+result_dir = './result/baseline_retry'
 os.makedirs(result_dir, exist_ok=True)
+print(result_dir)
 
 ########################
 print('########################')
@@ -92,7 +93,9 @@ target_col = 'demand'
 useless_cols = ['id', 'part',
                 'date', 'wm_yr_wk', 'quarter', 'week', 'day',
                 'is_quarter_end', 'is_quarter_start',
-                'is_month_end', 'is_month_start']
+                'is_month_end', 'is_month_start',
+                "is_year_end", "is_year_start"
+                ]
 # use: year, month, dayofweek, is_year_end, is_year_start, is_weekend
 x_features = [col for col in df_all.columns if col not in list(useless_cols + [target_col])]
 
@@ -171,7 +174,7 @@ params = {
     'objective': 'poisson',
     'n_jobs': -1,
     'seed': 20,
-    'learning_rate': 0.1,
+    'learning_rate': 0.05,
     'alpha': 0.1,
     'lambda': 0.1,
     'bagging_fraction': 0.66,
@@ -182,7 +185,7 @@ params = {
 model = lgb.train(
     params,
     train_set,
-    num_boost_round=2000,
+    num_boost_round=5000,
     early_stopping_rounds=200,
     valid_sets=[train_set, val_set],
     verbose_eval=50)
