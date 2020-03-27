@@ -14,7 +14,7 @@ from reduce_mem import reduce_mem_usage
 
 decide_x_feature = False
 
-result_dir = './result/baseline_retry_use_all_feature'
+result_dir = './result/baseline_add_shop_price'
 os.makedirs(result_dir, exist_ok=True)
 
 ########################
@@ -37,6 +37,7 @@ print('before_merged_shape:{}'.format(df_all.shape))
 t0_all = time.time()
 
 f_paths = [
+    './feature/shop/f_diff_ave_sales_day_store_dept.pkl',
     './feature/lag_demand/f_id_lag_demand.pkl',
     './feature/lag_sales/f_id_lag_sales.pkl'
 ]
