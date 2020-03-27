@@ -243,7 +243,7 @@ def predict(test, submission, csv_path):
     validation = submission[['id']].merge(predictions, on='id')
     final = pd.concat([validation, evaluation])
     print(final.head())
-    print(final.shape())
+    print(final.shape)
     final.to_csv(csv_path, index=False)
 
 
