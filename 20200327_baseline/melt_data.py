@@ -10,7 +10,7 @@ import warnings
 from sklearn import preprocessing
 import pandas as pd
 
-from resuce_mem import reduce_mem_usage
+from reduce_mem import reduce_mem_usage
 warnings.filterwarnings('ignore')
 
 
