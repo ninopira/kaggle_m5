@@ -12,9 +12,9 @@ import pandas as pd
 # from wrmsse import bild_WRMSSEEvaluator, WRMSSEEvaluator_learge
 from reduce_mem import reduce_mem_usage
 
-decide_x_feature = False
+decide_x_feature = True
 
-result_dir = './result/baseline_retry_use_all_feature'
+result_dir = './result/baseline_retry'
 os.makedirs(result_dir, exist_ok=True)
 
 ########################
@@ -68,7 +68,7 @@ print('before_date_shape:{}'.format(df_all.shape))
 
 df_all['date'] = pd.to_datetime(df_all['date'])
 # 対象
-attrs = ["year", "month", "dayofweek", "is_year_end", "is_year_start"]
+attrs = ["year", "month", "dayofweek"]
 # is_year_end, is_year_srart
 
 for attr in attrs:
@@ -91,7 +91,8 @@ target_col = 'demand'
 useless_cols = ['id', 'part',
                 'date', 'wm_yr_wk', 'quarter', 'week', 'day',
                 'is_quarter_end', 'is_quarter_start',
-                'is_month_end', 'is_month_start']
+                'is_month_end', 'is_month_start',
+                'is_year_end', 'is_year_start']
 # use: year, month, dayofweek, is_year_end, is_year_start, is_weekend
 x_features = [col for col in df_all.columns if col not in list(useless_cols + [target_col])]
 
@@ -227,6 +228,9 @@ print('########################')
 print('########################')
 print('predict_test')
 
+y_pred = model.predict(df_test[x_features], num_iteration=model.best_iteration)
+df_test['demand'] = y_pred
+
 
 def predict(test, submission, csv_path):
     predictions = test[['id', 'date', 'demand']]
@@ -238,9 +242,12 @@ def predict(test, submission, csv_path):
 
     validation = submission[['id']].merge(predictions, on='id')
     final = pd.concat([validation, evaluation])
+    print(final.head())
+    print(final.shape())
     final.to_csv(csv_path, index=False)
 
 
-submission = pd.read_csv('../input/sales_train_validation.csv')
+submission = pd.read_csv('../input/sample_submission.csv')
+print('sub_shape:{}'.format(submission.shape))
 csv_path = os.path.join(result_dir, 'RMSE_{}.csv'.format(val_MSE))
 predict(df_test, submission, csv_path)
