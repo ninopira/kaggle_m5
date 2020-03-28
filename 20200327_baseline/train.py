@@ -14,7 +14,7 @@ from reduce_mem import reduce_mem_usage
 
 decide_x_feature = False
 
-result_dir = './result/baseline_add_fiff_price_among_dept_in_shop'
+result_dir = './result/baseline_remove/release_date_add_fiff_price_among_dept_in_shop_add_price'
 os.makedirs(result_dir, exist_ok=True)
 print(result_dir)
 
@@ -23,7 +23,7 @@ print('########################')
 # read_transfomed
 print('read_transfomed_data')
 t0 = time.time()
-df_all = pd.read_pickle('./23965140_22257700_melt.pkl')
+df_all = pd.read_pickle('./23443584_removed_before_release_day_based_don_23965140_22257700_melt.pkl')
 df_all = reduce_mem_usage(df_all)
 print(df_all.shape)
 t1 = time.time()
@@ -38,6 +38,7 @@ print('before_merged_shape:{}'.format(df_all.shape))
 t0_all = time.time()
 
 f_paths = [
+    './feature/price/f_price.pkl',
     './feature/shop/f_diff_ave_sales_day_store_dept.pkl',
     './feature/lag_demand/f_id_lag_demand.pkl',
     './feature/lag_sales/f_id_lag_sales.pkl'
@@ -94,6 +95,7 @@ useless_cols = ['id', 'part',
                 'date', 'wm_yr_wk', 'quarter', 'week', 'day',
                 'is_quarter_end', 'is_quarter_start',
                 'is_month_end', 'is_month_start',
+                'release',
                 # "is_year_end", "is_year_start"
                 ]
 # use: year, month, dayofweek, is_year_end, is_year_start, is_weekend
