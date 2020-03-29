@@ -14,7 +14,7 @@ from reduce_mem import reduce_mem_usage
 
 decide_x_feature = False
 
-result_dir = './result/baseline_shop_no_price_again_add_weekly/'
+result_dir = './result/baseline_shop_no_price_again_add_4weekdays_stat/'
 os.makedirs(result_dir, exist_ok=True)
 print(result_dir)
 
@@ -38,7 +38,8 @@ print('before_merged_shape:{}'.format(df_all.shape))
 t0_all = time.time()
 
 f_paths = [
-    './feature/season/f_month_dayofweek_item_demand.pkl',
+    # './feature/price/f_price_no_rm_release.pkl',
+    './feature/lag_demand/f_id_lag_demand_4weekdays_stat.pkl',
     './feature/shop/f_diff_ave_sales_day_store_dept.pkl',
     './feature/lag_demand/f_id_lag_demand.pkl',
     './feature/lag_sales/f_id_lag_sales.pkl'
