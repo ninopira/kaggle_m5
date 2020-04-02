@@ -11,10 +11,11 @@ import pandas as pd
 
 # from wrmsse import bild_WRMSSEEvaluator, WRMSSEEvaluator_learge
 from reduce_mem import reduce_mem_usage
+from wrmse import weight_calc
 
 decide_x_feature = False
 
-result_dir = './result/baseline_shop_no_price_again_add_4weekdays_stat/'
+result_dir = './result/baseline_shop_no_price_again_add_4weekdays_stat_wrmsse/'
 os.makedirs(result_dir, exist_ok=True)
 print(result_dir)
 
@@ -130,6 +131,42 @@ print(x_features)
 print('########################')
 ########################
 
+
+########################
+print('########################')
+print('preparea_wrmse...')
+t0 = time.time()
+weight1, weight2, weight_mat_csr = weight_calc(df_all)
+
+
+def wrmsse(preds, data):
+    DAYS_PRED = 28
+    NUM_ITEMS = 30490
+    # this function is calculate for last 28 days to consider the non-zero demand period
+    # actual obserbed values / 正解ラベル
+    y_true = data.get_label()
+
+    y_true = y_true[-(NUM_ITEMS * DAYS_PRED):]
+    preds = preds[-(NUM_ITEMS * DAYS_PRED):]
+    # number of columns
+    num_col = DAYS_PRED
+
+    # reshape data to original array((NUM_ITEMS*num_col,1)->(NUM_ITEMS, num_col) ) / 推論の結果が 1 次元の配列になっているので直す
+    reshaped_preds = preds.reshape(num_col, NUM_ITEMS).T
+    reshaped_true = y_true.reshape(num_col, NUM_ITEMS).T
+    train = weight_mat_csr*np.c_[reshaped_preds, reshaped_true]
+    score = np.sum(
+                np.sqrt(
+                    np.mean(
+                        np.square(train[:, :num_col] - train[:, num_col:]), axis=1) / weight1) * weight2)
+    return 'wrmsse', score, False
+
+
+t1 = time.time()
+print('preparea_wrmse:{0}'.format(t1-t0) + '[sec]')
+print('########################')
+########################
+
 ########################
 print('########################')
 print('make_holdout')
@@ -173,7 +210,7 @@ print('########################')
 print('########################')
 print('learning..')
 params = {
-    'metric': 'rmse',
+    'metric': ('custom', 'rmse'),
     'objective': 'poisson',
     'n_jobs': -1,
     'seed': 20,
@@ -191,6 +228,7 @@ model = lgb.train(
     num_boost_round=5000,
     early_stopping_rounds=200,
     valid_sets=[train_set, val_set],
+    feval=wrmsse,
     verbose_eval=50)
 
 del train_set, val_set
@@ -222,10 +260,11 @@ print('########################')
 
 ########################
 print('########################')
-print('metric_MSE')
-val_pred = model.predict(df_val[x_features], num_iteration=model.best_iteration)
-val_MSE = np.sqrt(metrics.mean_squared_error(val_pred, df_val[target_col]))
-print('MSE:{}'.format(val_MSE))
+print('metric...')
+val_RMSE = model.best_score['valid_1']['rmse']
+print('MSE:{}'.format(val_RMSE))
+val_WRMSSE = model.best_score['valid_1']['wrmsse']
+print('WRMSSE:{}'.format(val_WRMSSE))
 print('########################')
 ########################
 
@@ -255,5 +294,5 @@ def predict(test, submission, csv_path):
 
 submission = pd.read_csv('../input/sample_submission.csv')
 print('sub_shape:{}'.format(submission.shape))
-csv_path = os.path.join(result_dir, 'RMSE_{}.csv'.format(val_MSE))
+csv_path = os.path.join(result_dir, 'RMSE_{}_WRMSSE{}.csv'.format(val_RMSE, val_WRMSSE))
 predict(df_test, submission, csv_path)
