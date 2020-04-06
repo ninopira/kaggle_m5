@@ -14,7 +14,7 @@ from reduce_mem import reduce_mem_usage
 
 decide_x_feature = False
 
-result_dir = './result/baseline_shop_no_price_again_add_4weekdays_stat/'
+result_dir = './result/set_seed/baseline_shop_no_price_again_add_4weekdays_stat/'
 os.makedirs(result_dir, exist_ok=True)
 print(result_dir)
 
@@ -126,6 +126,8 @@ use_features = x_features + [target_col] + ['id', 'date']
 x_features = list(set(x_features))
 
 print('len_x_features:{}'.format(len(x_features)))
+# sort
+x_features = sorted(x_features)
 print(x_features)
 print('########################')
 ########################
