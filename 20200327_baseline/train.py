@@ -15,7 +15,7 @@ from wrmse import weight_calc
 
 decide_x_feature = False
 
-result_dir = './result/set_seed/baseline_shop_no_price_again_add_4weekdays_stat/'
+result_dir = './result/set_seed/baseline_shop_no_price_again_add_4weekdays_stat_price/'
 os.makedirs(result_dir, exist_ok=True)
 print(result_dir)
 
@@ -40,6 +40,7 @@ t0_all = time.time()
 
 f_paths = [
     # './feature/price/f_price_no_rm_release.pkl',
+    './feature/price/f_price_2.pkl',
     './feature/lag_demand/f_id_lag_demand_4weekdays_stat.pkl',
     './feature/shop/f_diff_ave_sales_day_store_dept.pkl',
     './feature/lag_demand/f_id_lag_demand.pkl',
