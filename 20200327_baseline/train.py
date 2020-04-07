@@ -15,7 +15,7 @@ from wrmse import weight_calc
 
 decide_x_feature = False
 
-result_dir = './result/set_seed/baseline_shop_no_price_again_add_4weekdays_stat/'
+result_dir = './result/set_seed/baseline_shop_no_price_again_add_4weekdays_stat_0_sellprice/'
 os.makedirs(result_dir, exist_ok=True)
 print(result_dir)
 
@@ -26,6 +26,8 @@ print('read_transfomed_data')
 t0 = time.time()
 df_all = pd.read_pickle('./23965140_22257700_melt.pkl')
 df_all = reduce_mem_usage(df_all)
+print(df_all.shape)
+df_all = df_all.query('sell_price > 0')
 print(df_all.shape)
 t1 = time.time()
 print('read_transfomed_data:{0}'.format(t1-t0) + '[sec]')
