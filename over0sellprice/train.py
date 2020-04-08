@@ -13,7 +13,7 @@ import pandas as pd
 from reduce_mem import reduce_mem_usage
 from wrmse import weight_calc
 
-use_top_importance = True
+use_top_importance = False
 num_features = 50
 
 result_dir = './result/set_seed/baseline_shop_no_price_again_add_4weekdays_stat_std_shop/'
@@ -42,7 +42,7 @@ print('before_merged_shape:{}'.format(df_all.shape))
 t0_all = time.time()
 
 f_paths = [
-    # './feature/price/f_price_no_rm_release.pkl',
+    './feature/cumsum/f_id_cumsum_demand.pkl',
     './feature/shop/f_diff_ave_sales_day_store_dept_std.pkl',
     './feature/lag_demand/f_id_lag_demand_4weekdays_stat.pkl',
     './feature/shop/f_diff_ave_sales_day_store_dept.pkl',
