@@ -16,7 +16,7 @@ from wrmse import weight_calc
 use_top_importance = False
 num_features = 50
 
-result_dir = './result/set_seed/baseline_shop_no_price_again_add_4weekdays_stat_std_shop/'
+result_dir = './result/set_seed/baseline_shop_no_price_again_add_4weekdays_stat_std_shop_cumsum/'
 os.makedirs(result_dir, exist_ok=True)
 print(result_dir)
 
