@@ -236,7 +236,7 @@ if wrmsse:
     model = lgb.train(
         params,
         train_set,
-        num_boost_round=5000,
+        num_boost_round=3000,
         early_stopping_rounds=200,
         valid_sets=[train_set, fake_valid_data],
         feval=wrmsse,
@@ -263,8 +263,11 @@ else:
         valid_sets=[train_set, fake_valid_data],
         verbose_eval=2)
 
-del train_set, fake_valid_data
-
+del train_set, fake_valid_data, df_train, df_test
+gc.collect()
+model_path = os.path.join(result_dir, 'model.lgb')
+model.save_model(model_path)
+# model =  lgb.Booster(model_file='model.lgb')
 importances = pd.DataFrame()
 importances['feature'] = x_features
 importances['gain'] = model.feature_importance()
