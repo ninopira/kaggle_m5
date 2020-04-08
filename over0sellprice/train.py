@@ -13,7 +13,8 @@ import pandas as pd
 from reduce_mem import reduce_mem_usage
 from wrmse import weight_calc
 
-decide_x_feature = False
+use_top_importance = True
+num_features = 50
 
 result_dir = './result/set_seed/baseline_shop_no_price_again_add_4weekdays_stat_std_shop/'
 os.makedirs(result_dir, exist_ok=True)
@@ -106,24 +107,14 @@ useless_cols = ['id', 'part',
 # use: year, month, dayofweek, is_year_end, is_year_start, is_weekend
 x_features = [col for col in df_all.columns if col not in list(useless_cols + [target_col])]
 
-if decide_x_feature:
-    x_features = [
-        "item_id", "dept_id", "cat_id", "store_id", "state_id",
-        "event_name_1", "event_type_1",
-        "snap_CA", "snap_TX", "snap_WI",
-        "sell_price",
-        # demand features.
-        # "shift_t28", "rolling_std_t7", "rolling_std_t30", "rolling_std_t90", "rolling_std_t180",
-        # "rolling_mean_t7", "rolling_mean_t30", "rolling_mean_t60",
-        'demand_lag_28', 'demand_lag_28_roll_std_7', 'demand_lag_28_roll_std_30', 'demand_lag_28_roll_std_90', 'demand_lag_28_roll_std_180',
-        'demand_lag_28_roll_mean_7', 'demand_lag_28_roll_mean_30', 'demand_lag_28_roll_mean_60',
-
-        # price features
-        # "price_change_t1", "price_change_t365", "rolling_price_std_t7",
-        'price_change_t1', 'price_change_t365', 'price_rolling_std_t7',
-        # time features.
-        "year", "month", "dayofweek"
-        ]
+if use_top_importance:
+    csv_path = os.path.join(result_dir, 'importances.csv')
+    df_importance = pd.read_csv(csv_path)
+    df_importance.sort_values('gain', ascending=False, inplace=True)
+    x_features = list(df_importance.head(num_features)['feature'])
+    result_dir = os.path.join(result_dir, 'use_top_{}_importance_features'.format(num_features))
+    os.makedirs(result_dir, exist_ok=True)
+    print(result_dir)
 
 
 use_features = x_features + [target_col] + ['id', 'date']
@@ -235,7 +226,8 @@ model = lgb.train(
     valid_sets=[train_set, val_set],
     feval=wrmsse,
     verbose_eval=50)
-
+model_path = os.path.join(result_dir, 'model.lgb')
+model.save_model(model_path)
 del train_set, val_set
 
 importances = pd.DataFrame()
