@@ -15,8 +15,9 @@ from wrmse import weight_calc
 
 use_top_importance = False
 num_features = 50
+train_all = True
 
-result_dir = './result/set_seed/baseline_shop_no_price_again_add_4weekdays_stat_std_shop_cumsum/'
+result_dir = './result/set_seed/train_all/baseline_shop_no_price_again_add_4weekdays_stat_std_shop_cumsum/'
 os.makedirs(result_dir, exist_ok=True)
 print(result_dir)
 
@@ -196,6 +197,9 @@ print('build_lgb_dataset')
 t0 = time.time()
 train_set = lgb.Dataset(df_train[x_features], df_train[target_col])
 val_set = lgb.Dataset(df_val[x_features], df_val[target_col])
+if train_all:
+    val_set = lgb.Dataset(df_train[x_features], df_train[target_col])
+
 
 t1 = time.time()
 print('build_lgb_dataset:{0}'.format(t1-t0) + '[sec]')
