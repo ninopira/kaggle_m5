@@ -182,6 +182,9 @@ df_train = df_all.query('date <= "2016-03-27"')
 df_val = df_all.query('date > "2016-03-27" and date <= "2016-04-24"')
 # Todo: test1のみ
 df_test = df_all.query('date > "2016-04-24" and date <= "2016-05-22"')
+if train_all:
+    df_train = df_all.query('date <= "2016-04-24"')
+    df_val = df_all.query('date <= "2016-04-24"')
 
 print('df_train:{}_df_val:{}_df_test:{}'.format(df_train.shape, df_val.shape, df_test.shape))
 del df_all
@@ -197,8 +200,6 @@ print('build_lgb_dataset')
 t0 = time.time()
 train_set = lgb.Dataset(df_train[x_features], df_train[target_col])
 val_set = lgb.Dataset(df_val[x_features], df_val[target_col])
-if train_all:
-    val_set = lgb.Dataset(df_train[x_features], df_train[target_col])
 
 
 t1 = time.time()
