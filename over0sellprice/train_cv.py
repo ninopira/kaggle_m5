@@ -178,7 +178,7 @@ params = {
     'boosting_type': 'gbdt',
     'n_jobs': -1,
     'seed': 42,
-    'learning_rate': 0.5,
+    'learning_rate': 0.075,
     'bagging_fraction': 0.85,
     'bagging_freq': 1,
     'colsample_bytree': 0.85,
