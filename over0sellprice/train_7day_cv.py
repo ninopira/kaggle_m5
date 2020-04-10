@@ -145,7 +145,7 @@ df_train = df_all.query('date <= "2016-04-24"')
 # Todo: test1のみ
 df_test = df_all.query('date > "2016-04-24" and date <= "2016-05-22"')
 
-print('df_train:{}_df_val:{}_df_test:{}'.format(df_train.shape, df_val.shape, df_test.shape))
+print('df_train:{}_df_test:{}'.format(df_train.shape, df_test.shape))
 del df_all
 gc.collect()
 t1 = time.time()
@@ -153,17 +153,6 @@ print('make_holdout:{0}'.format(t1-t0) + '[sec]')
 print('########################')
 ########################
 
-########################
-print('########################')
-print('build_lgb_dataset')
-t0 = time.time()
-train_set = lgb.Dataset(df_train[x_features], df_train[target_col])
-val_set = lgb.Dataset(df_val[x_features], df_val[target_col])
-
-t1 = time.time()
-print('build_lgb_dataset:{0}'.format(t1-t0) + '[sec]')
-print('########################')
-########################
 
 ########################
 def custom_asymmetric_train(y_pred, y_true):
@@ -183,11 +172,13 @@ def custom_asymmetric_valid(y_pred, y_true):
 ########################
 
 
+########################
 params = {
+    'metric': ('custom', 'rmse'),
     'boosting_type': 'gbdt',
     'n_jobs': -1,
     'seed': 42,
-    'learning_rate': 0.1,
+    'learning_rate': 0.5,
     'bagging_fraction': 0.85,
     'bagging_freq': 1,
     'colsample_bytree': 0.85,
@@ -196,17 +187,27 @@ params = {
     'num_leaves': 200,
     'lambda_l1': 0.5,
     'lambda_l2': 0.5}
+########################
 
 ########################
 print('########################')
 print('learning..')
-kf = GroupKFold(5)
+t0_all = time.time()
+print('grouping..')
 group = df_train['week'].astype(str) + '_' + df_train['year'].astype(str)
+print('grouping_done.')
+n_fold = 5
+kf = GroupKFold(n_fold)
 models = []
+rmses = []
+asymmetrics = []
+importances_all = pd.DataFrame()
 for fold, (trn_idx, val_idx) in enumerate(kf.split(df_train[x_features], df_train[target_col], group)):
     print(f'Training fold {fold + 1}')
     train_set = lgb.Dataset(df_train.iloc[trn_idx][x_features], df_train.iloc[trn_idx][target_col])
     val_set = lgb.Dataset(df_train.iloc[val_idx][x_features], df_train.iloc[val_idx][target_col])
+    print('train:{}_val:{}'.format(df_train.iloc[trn_idx][x_features].shape, df_train.iloc[val_idx][x_features].shape))
+    t0 = time.time()
 
     model = lgb.train(
         params,
@@ -216,15 +217,37 @@ for fold, (trn_idx, val_idx) in enumerate(kf.split(df_train[x_features], df_trai
         valid_sets=[train_set, val_set],
         feval=custom_asymmetric_valid,
         verbose_eval=50)
+    # save_model
+    models.append(model)
+    model_path = os.path.join(result_dir, 'model_{}.lgb'.format(fold+1))
+    model.save_model(model_path)
+    t1 = time.time()
+    print('Training fold {}:{}'.format(fold, t1-t0) + '[sec]')
+
+    # metric
+    val_RMSE = model.best_score['valid_1']['rmse']
+    rmses.append(val_RMSE)
+    val_asymmetric = model.best_score['valid_1']['custom_asymmetric_eval']
+    asymmetrics.append(val_asymmetric)
+    print('MSE:{}_ASYM{}'.format(val_RMSE, val_asymmetric))
+
+    # pred
+    y_pred = model.predict(df_test[x_features], num_iteration=model.best_iteration)
+    df_test['demand'] += y_pred / n_fold
+
+    # imprtance
+    importances = pd.DataFrame()
+    importances['feature'] = x_features
+    importances['gain'] = model.feature_importance()
+    importances['fold'] = fold + 1
+    importances_all = pd.concat([importances_all, importances], axis=0, sort=False)
 
 del train_set, val_set
-
-importances = pd.DataFrame()
-importances['feature'] = x_features
-importances['gain'] = model.feature_importance()
-
+gc.collect()
 
 def save_importances(importances_: pd.DataFrame):
+    mean_gain = importances_[['gain', 'feature']].groupby('feature').mean()
+    importances_['mean_gain'] = importances_['feature'].map(mean_gain['gain'])
     csv_path = os.path.join(result_dir, 'importances.csv')
     importances_.to_csv(csv_path, index=False)
     plt.figure(figsize=(8, 8))
@@ -239,7 +262,7 @@ def save_importances(importances_: pd.DataFrame):
 
 save_importances(importances)
 t1 = time.time()
-print('learning:{0}'.format(t1-t0) + '[sec]')
+print('all_learning:{}'.format(t1-t0_all) + '[sec]')
 print('########################')
 ########################
 
@@ -247,14 +270,11 @@ print('########################')
 ########################
 print('########################')
 print('metric...')
-val_RMSE = model.best_score['valid_1']['rmse']
-print('MSE:{}'.format(val_RMSE))
-val_WRMSSE = model.best_score['valid_1']['wrmsse']
-print('WRMSSE:{}'.format(val_WRMSSE))
+val_RMSE = np.mean(rmses)
+val_asymmetric = np.mean(asymmetrics)
+print('RMSE:{}_ASYM{}'.format(val_RMSE, val_asymmetric))
 print('########################')
 ########################
-
-
 
 
 def predict(test, submission, csv_path):
@@ -274,5 +294,5 @@ def predict(test, submission, csv_path):
 
 submission = pd.read_csv('../input/sample_submission.csv')
 print('sub_shape:{}'.format(submission.shape))
-csv_path = os.path.join(result_dir, 'RMSE_{}_WRMSSE{}.csv'.format(val_RMSE, val_WRMSSE))
+csv_path = os.path.join(result_dir, 'RMSE:{}_ASYM{}.csv'.format(val_RMSE, val_asymmetric))
 predict(df_test, submission, csv_path)
