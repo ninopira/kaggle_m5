@@ -8,6 +8,7 @@ from matplotlib import pyplot as plt
 import numpy as np
 import seaborn as sns
 from sklearn import metrics
+from sklearn.model_selection import GroupKFold
 import lightgbm as lgb
 import pandas as pd
 
@@ -17,7 +18,7 @@ from reduce_mem import reduce_mem_usage
 use_top_importance = False
 num_features = 50
 
-result_dir = './result/set_seed/7day/baseline_shop_no_price_again_add_4weekdays_stat_std_shop_cumsum_zerodem/'
+result_dir = './result/set_seed/cv/baseline_shop_no_price_again_add_4weekdays_stat_std_shop_cumsum_zerodem/'
 os.makedirs(result_dir, exist_ok=True)
 print(result_dir)
 
@@ -46,7 +47,7 @@ f_paths = [
     './feature/shop/f_diff_ave_sales_day_store_dept_std.pkl',
     './feature/lag_demand/f_id_lag_demand_4weekdays_stat.pkl',
     './feature/shop/f_diff_ave_sales_day_store_dept.pkl',
-    './feature/lag_demand/f_id_lag_demand_7day.pkl',
+    './feature/lag_demand/f_id_lag_demand.pkl',
     './feature/lag_sales/f_id_lag_sales.pkl'
 ]
 
@@ -78,7 +79,7 @@ print('before_date_shape:{}'.format(df_all.shape))
 
 df_all['date'] = pd.to_datetime(df_all['date'])
 # 対象
-attrs = ["year", "month", "dayofweek", "is_year_end", "is_year_start"]
+attrs = ["year", "month", "dayofweek", "is_year_end", "is_year_start", "week"]
 # is_year_end, is_year_srart
 
 for attr in attrs:
@@ -117,7 +118,7 @@ if use_top_importance:
     os.makedirs(result_dir, exist_ok=True)
     print(result_dir)
 
-use_features = x_features + [target_col] + ['id', 'date']
+use_features = x_features + [target_col] + ['id', 'date', 'week']
 x_features = list(set(x_features))
 
 print('len_x_features:{}'.format(len(x_features)))
@@ -140,9 +141,7 @@ print(df_all.shape)
 print('sep...')
 # train
 # df_train = df_all[df_all['date'] <= '2016-03-27']
-df_train = df_all.query('date <= "2016-03-27"')
-# val
-df_val = df_all.query('date > "2016-03-27" and date <= "2016-04-24"')
+df_train = df_all.query('date <= "2016-04-24"')
 # Todo: test1のみ
 df_test = df_all.query('date > "2016-04-24" and date <= "2016-05-22"')
 
@@ -184,30 +183,39 @@ def custom_asymmetric_valid(y_pred, y_true):
 ########################
 
 
+params = {
+    'boosting_type': 'gbdt',
+    'n_jobs': -1,
+    'seed': 42,
+    'learning_rate': 0.1,
+    'bagging_fraction': 0.85,
+    'bagging_freq': 1,
+    'colsample_bytree': 0.85,
+    'colsample_bynode': 0.85,
+    'min_data_per_leaf': 25,
+    'num_leaves': 200,
+    'lambda_l1': 0.5,
+    'lambda_l2': 0.5}
+
 ########################
 print('########################')
 print('learning..')
-params = {
-    'metric': ('custom', 'rmse'),
-    'objective': 'poisson',
-    'n_jobs': -1,
-    'seed': 20,
-    'learning_rate': 0.05,
-    'alpha': 0.1,
-    'lambda': 0.1,
-    'bagging_fraction': 0.66,
-    'bagging_freq': 2,
-    'colsample_bytree': 0.77
-    }
+kf = GroupKFold(5)
+group = df_train['week'].astype(str) + '_' + df_train['year'].astype(str)
+models = []
+for fold, (trn_idx, val_idx) in enumerate(kf.split(df_train[x_features], df_train[target_col], group)):
+    print(f'Training fold {fold + 1}')
+    train_set = lgb.Dataset(df_train.iloc[trn_idx][x_features], df_train.iloc[trn_idx][target_col])
+    val_set = lgb.Dataset(df_train.iloc[val_idx][x_features], df_train.iloc[val_idx][target_col])
 
-model = lgb.train(
-    params,
-    train_set,
-    num_boost_round=5000,
-    early_stopping_rounds=200,
-    valid_sets=[train_set, val_set],
-    feval=wrmsse,
-    verbose_eval=50)
+    model = lgb.train(
+        params,
+        train_set,
+        num_boost_round=5000,
+        early_stopping_rounds=200,
+        valid_sets=[train_set, val_set],
+        feval=custom_asymmetric_valid,
+        verbose_eval=50)
 
 del train_set, val_set
 
@@ -247,68 +255,6 @@ print('########################')
 ########################
 
 
-########################
-print('########################')
-print('predict_test')
-start_day = '2016-04-24'
-df_test_preds = []
-df_tr_val = pd.concat([df_train, df_val])
-del df_train, df_val
-gc.collect()
-for i in range(4):
-    end_day = datetime.datetime.strptime(start_day, '%Y-%m-%d') + datetime.timedelta(days=7)
-    end_day = datetime.datetime.strftime(end_day, '%Y-%m-%d')
-    print('start{}-end-{}'.format(start_day, end_day))
-
-    # 7day分のみ取り出す
-    df_test_small = df_test.query('date > @start_day & date <= @end_day')
-    print('all_test_:{}'.format(df_test.shape))
-    print('small_test_:{}'.format(df_test_small.shape))
-    if i != 0:
-        df_cnc = pd.concat([df_tr_val, df_test_used, df_test_small])
-        print('conc_test_:{}'.format(df_cnc.shape))
-        # lagを埋める
-        print('lag_7days_for_test_data...')
-        t0 = time.time()
-        df_cnc['demand_lag_7'] = df_cnc.groupby(["id"])["demand"].transform(lambda x: x.shift(7))
-        df_test_small = df_test_small.drop(['demand_lag_7'], axis=1).merge(df_cnc[['id', 'date', 'demand_lag_7']], on=['id', 'date'], how='left')
-        print('check_lag7_mean:{}'.format(df_test_small['demand_lag_7'].mean()))
-        for val in [7, 30, 60, 90, 180]:
-            colname = f"demand_lag_7_roll_std_{val}"
-            print(colname)
-            df_cnc[colname] = df_cnc.groupby(["id"])["demand"].transform(lambda x: x.shift(7).rolling(val).std())
-            df_test_small = df_test_small.drop([colname], axis=1).merge(df_cnc[['id', 'date', colname]], on=['id', 'date'], how='left')
-            print(colname, 'mean', df_test_small[colname].mean())
-        for val in [7, 30, 60, 90, 180]:
-            colname = f"demand_lag_7_roll_mean_{val}"
-            print(colname)
-            df_cnc[colname] = df_cnc.groupby(["id"])["demand"].transform(lambda x: x.shift(7).rolling(val).mean())
-            df_test_small = df_test_small.drop([colname], axis=1).merge(df_cnc[['id', 'date', colname]], on=['id', 'date'], how='left')
-            print(colname, 'mean', df_test_small[colname].mean())
-        colname = "demand_lag_7_roll_skew_30"
-        print(colname)
-        df_cnc[colname] = df_cnc.groupby(["id"])["demand"].transform(lambda x: x.shift(7).rolling(30).skew())
-        df_test_small = df_test_small.drop([colname], axis=1).merge(df_cnc[['id', 'date', colname]], on=['id', 'date'], how='left')
-        print(colname, 'mean', df_test_small[colname].mean())
-        colname = "demand_lag_7_roll_kurt_30"
-        print(colname)
-        df_cnc[colname] = df_cnc.groupby(["id"])["demand"].transform(lambda x: x.shift(7).rolling(30).kurt())
-        df_test_small = df_test_small.drop([colname], axis=1).merge(df_cnc[['id', 'date', colname]], on=['id', 'date'], how='left')
-        print(colname, 'mean', df_test_small[colname].mean())
-
-        t1 = time.time()
-        print('lag_7days_for_test_data:{0}'.format(t1-t0) + '[sec]')
-    # 予測
-    print('pred...')
-    df_test_small['demand'] = model.predict(df_test_small[x_features], num_iteration=model.best_iteration)
-    df_test_preds.append(df_test_small)
-    df_test_used = pd.concat(df_test_preds)
-    # oldをnewに更新
-    start_day = end_day
-    df_test_small_old = df_test_small
-df_test = pd.concat(df_test_preds)
-print('########################')
-########################
 
 
 def predict(test, submission, csv_path):
