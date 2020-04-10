@@ -1,3 +1,4 @@
+# https://www.kaggle.com/ragnar123/simple-lgbm-groupkfold-cv
 import datetime
 import gc
 import os
@@ -12,7 +13,6 @@ import pandas as pd
 
 # from wrmsse import bild_WRMSSEEvaluator, WRMSSEEvaluator_learge
 from reduce_mem import reduce_mem_usage
-from wrmse import weight_calc
 
 use_top_importance = False
 num_features = 50
@@ -129,41 +129,6 @@ print('########################')
 
 ########################
 print('########################')
-print('preparea_wrmse...')
-t0 = time.time()
-weight1, weight2, weight_mat_csr = weight_calc(df_all)
-
-
-def wrmsse(preds, data):
-    DAYS_PRED = 28
-    NUM_ITEMS = 30490
-    # this function is calculate for last 28 days to consider the non-zero demand period
-    # actual obserbed values / 正解ラベル
-    y_true = data.get_label()
-
-    y_true = y_true[-(NUM_ITEMS * DAYS_PRED):]
-    preds = preds[-(NUM_ITEMS * DAYS_PRED):]
-    # number of columns
-    num_col = DAYS_PRED
-
-    # reshape data to original array((NUM_ITEMS*num_col,1)->(NUM_ITEMS, num_col) ) / 推論の結果が 1 次元の配列になっているので直す
-    reshaped_preds = preds.reshape(num_col, NUM_ITEMS).T
-    reshaped_true = y_true.reshape(num_col, NUM_ITEMS).T
-    train = weight_mat_csr*np.c_[reshaped_preds, reshaped_true]
-    score = np.sum(
-                np.sqrt(
-                    np.mean(
-                        np.square(train[:, :num_col] - train[:, num_col:]), axis=1) / weight1) * weight2)
-    return 'wrmsse', score, False
-
-
-t1 = time.time()
-print('preparea_wrmse:{0}'.format(t1-t0) + '[sec]')
-print('########################')
-########################
-
-########################
-print('########################')
 print('make_holdout')
 t0 = time.time()
 df_all = df_all[use_features]
@@ -200,6 +165,24 @@ t1 = time.time()
 print('build_lgb_dataset:{0}'.format(t1-t0) + '[sec]')
 print('########################')
 ########################
+
+########################
+def custom_asymmetric_train(y_pred, y_true):
+    y_true = y_true.get_label()
+    residual = (y_true - y_pred).astype("float")
+    grad = np.where(residual < 0, -2 * residual, -2 * residual * 1.15)
+    hess = np.where(residual < 0, 2, 2 * 1.15)
+    return grad, hess
+
+
+# define custom evaluation metric
+def custom_asymmetric_valid(y_pred, y_true):
+    y_true = y_true.get_label()
+    residual = (y_true - y_pred).astype("float")
+    loss = np.where(residual < 0, (residual ** 2), (residual ** 2) * 1.15)
+    return "custom_asymmetric_eval", np.mean(loss), False
+########################
+
 
 ########################
 print('########################')
