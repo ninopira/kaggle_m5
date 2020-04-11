@@ -280,6 +280,7 @@ for fold, (trn_idx, val_idx) in enumerate(kf.split(df_train[x_features], df_trai
             print('lag_7days_for_test_data:{0}'.format(t1-t0) + '[sec]')
         # 予測
         print('pred...')
+        print(df_test_small.shape)
         y_pred = model.predict(df_test_small[x_features], num_iteration=model.best_iteration)
         df_test_small['demand'] = y_pred
         df_test_preds.append(df_test_small)
