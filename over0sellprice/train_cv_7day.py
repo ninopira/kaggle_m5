@@ -288,8 +288,9 @@ for fold, (trn_idx, val_idx) in enumerate(kf.split(df_train[x_features], df_trai
         # oldをnewに更新
         start_day = end_day
         df_test_small_old = df_test_small
+    print('pred_part_done')
     df_test_cv = pd.concat(df_test_preds)
-    df_test['demand'] += df_test_cv['demand'] / n_fold
+    df_test['demand'] += list(df_test_cv['demand'] / n_fold)
     ################################################
 
     # imprtance
