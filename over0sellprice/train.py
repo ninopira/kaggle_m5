@@ -15,8 +15,10 @@ from wrmse import weight_calc
 
 use_top_importance = False
 num_features = 50
+# seed = 20
+seeds = [20, 3655, 3333, 123]
 
-result_dir = './result/set_seed/baseline_shop_no_price_again_add_4weekdays_stat_std_shop_cumsum_zerodem/'
+result_dir = './result/set_seed/4seed/baseline_shop_no_price_again_add_4weekdays_stat_std_shop_cumsum_zerodem/'
 os.makedirs(result_dir, exist_ok=True)
 print(result_dir)
 
@@ -205,74 +207,80 @@ print('########################')
 
 ########################
 print('########################')
-print('learning..')
-params = {
-    'metric': ('custom', 'rmse'),
-    'objective': 'poisson',
-    'n_jobs': -1,
-    'seed': 20,
-    'learning_rate': 0.05,
-    'alpha': 0.1,
-    'lambda': 0.1,
-    'bagging_fraction': 0.66,
-    'bagging_freq': 2,
-    'colsample_bytree': 0.77
-    }
 
-model = lgb.train(
-    params,
-    train_set,
-    num_boost_round=5000,
-    early_stopping_rounds=200,
-    valid_sets=[train_set, val_set],
-    feval=wrmsse,
-    verbose_eval=50)
-model_path = os.path.join(result_dir, 'model.lgb')
-model.save_model(model_path)
-del train_set, val_set
+val_RMSEs = []
+val_WRMSSEs = []
+for i, seed in enumerate(seeds):
+    print(i, seed)
 
-importances = pd.DataFrame()
-importances['feature'] = x_features
-importances['gain'] = model.feature_importance()
+    print('learning..')
+    params = {
+        'metric': ('custom', 'rmse'),
+        'objective': 'poisson',
+        'n_jobs': -1,
+        'seed': seed,
+        'learning_rate': 0.05,
+        'alpha': 0.1,
+        'lambda': 0.1,
+        'bagging_fraction': 0.66,
+        'bagging_freq': 2,
+        'colsample_bytree': 0.77
+        }
 
+    model = lgb.train(
+        params,
+        train_set,
+        num_boost_round=5000,
+        early_stopping_rounds=200,
+        valid_sets=[train_set, val_set],
+        feval=wrmsse,
+        verbose_eval=50)
+    model_path = os.path.join(result_dir, 'seed_{}_model.lgb'.format(seed))
+    model.save_model(model_path)
 
-def save_importances(importances_: pd.DataFrame):
-    csv_path = os.path.join(result_dir, 'importances.csv')
-    importances_.to_csv(csv_path, index=False)
-    plt.figure(figsize=(8, 8))
-    sns.barplot(
-        x='gain',
-        y='feature',
-        data=importances_.sort_values('gain', ascending=False)[:50])
-    png_path = os.path.join(result_dir, 'importances.png')
-    plt.tight_layout()
-    plt.savefig(png_path)
+    importances = pd.DataFrame()
+    importances['feature'] = x_features
+    importances['gain'] = model.feature_importance()
 
 
-save_importances(importances)
-t1 = time.time()
-print('learning:{0}'.format(t1-t0) + '[sec]')
-print('########################')
-########################
+    def save_importances(importances_: pd.DataFrame):
+        csv_path = os.path.join(result_dir, 'importances.csv')
+        importances_.to_csv(csv_path, index=False)
+        plt.figure(figsize=(8, 8))
+        sns.barplot(
+            x='gain',
+            y='feature',
+            data=importances_.sort_values('gain', ascending=False)[:50])
+        png_path = os.path.join(result_dir, 'importances.png')
+        plt.tight_layout()
+        plt.savefig(png_path)
 
+    save_importances(importances)
+    t1 = time.time()
+    print('learning:{0}'.format(t1-t0) + '[sec]')
+    print('########################')
+    ########################
 
-########################
-print('########################')
-print('metric...')
-val_RMSE = model.best_score['valid_1']['rmse']
-print('MSE:{}'.format(val_RMSE))
-val_WRMSSE = model.best_score['valid_1']['wrmsse']
-print('WRMSSE:{}'.format(val_WRMSSE))
-print('########################')
-########################
+    ########################
+    print('########################')
+    print('metric...')
+    val_RMSE = model.best_score['valid_1']['rmse']
+    val_RMSEs.append(val_RMSE)
+    print('MSE:{}'.format(val_RMSE))
+    val_WRMSSE = model.best_score['valid_1']['wrmsse']
+    val_WRMSSEs.append(val_WRMSSE)
+    print('WRMSSE:{}'.format(val_WRMSSE))
+    print('########################')
+    ########################
 
+    ########################
+    print('########################')
+    print('predict_test')
 
-########################
-print('########################')
-print('predict_test')
-
-y_pred = model.predict(df_test[x_features], num_iteration=model.best_iteration)
-df_test['demand'] = y_pred
+    y_pred = model.predict(df_test[x_features], num_iteration=model.best_iteration)
+    print('pred_mean:{}'.format(np.mean(y_pred)))
+    df_test['demand'] += list(y_pred / len(seeds))
+print('all_seed_done')
 
 
 def predict(test, submission, csv_path):
@@ -290,6 +298,10 @@ def predict(test, submission, csv_path):
     final.to_csv(csv_path, index=False)
 
 
+val_RMSE = np.mean(val_RMSEs)
+val_WRMSSE = np.mean(val_WRMSSEs)
+print('FINAL_MSE:{}'.format(val_RMSE))
+print('FINAL_WRMSSE:{}'.format(val_WRMSSE))
 submission = pd.read_csv('../input/sample_submission.csv')
 print('sub_shape:{}'.format(submission.shape))
 csv_path = os.path.join(result_dir, 'RMSE_{}_WRMSSE{}.csv'.format(val_RMSE, val_WRMSSE))
