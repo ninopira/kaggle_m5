@@ -18,7 +18,7 @@ from reduce_mem import reduce_mem_usage
 use_top_importance = False
 num_features = 50
 
-result_dir = './result/set_seed/cv/baseline_shop_no_price_again_add_4weekdays_stat_std_shop_cumsum_zerodem/'
+result_dir = './result/set_seed/cv/fobj/baseline_shop_no_price_again_add_4weekdays_stat_std_shop_cumsum_zerodem/'
 os.makedirs(result_dir, exist_ok=True)
 print(result_dir)
 
@@ -216,6 +216,7 @@ for fold, (trn_idx, val_idx) in enumerate(kf.split(df_train[x_features], df_trai
         early_stopping_rounds=200,
         valid_sets=[train_set, val_set],
         feval=custom_asymmetric_valid,
+        fobj=custom_asymmetric_train,
         verbose_eval=50)
     # save_model
     models.append(model)
