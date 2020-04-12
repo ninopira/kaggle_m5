@@ -18,7 +18,7 @@ from reduce_mem import reduce_mem_usage
 use_top_importance = False
 num_features = 50
 
-result_dir = './result/set_seed/cv/baseline_shop_no_price_again_add_4weekdays_stat_std_shop_cumsum_zerodem/'
+result_dir = './result/set_seed/cv/baseline_shop_no_price_again_add_4weekdays_stat_std_shop_cumsum_zerodem_cate/'
 os.makedirs(result_dir, exist_ok=True)
 print(result_dir)
 
@@ -202,10 +202,11 @@ models = []
 rmses = []
 asymmetrics = []
 importances_all = pd.DataFrame()
+cat_features = ['item_id', 'dept_id', 'cat_id', 'store_id', 'state_id', 'event_name_1', 'event_type_1', 'event_name_2', 'event_type_2']
 for fold, (trn_idx, val_idx) in enumerate(kf.split(df_train[x_features], df_train[target_col], group)):
     print(f'Training fold {fold + 1}')
-    train_set = lgb.Dataset(df_train.iloc[trn_idx][x_features], df_train.iloc[trn_idx][target_col])
-    val_set = lgb.Dataset(df_train.iloc[val_idx][x_features], df_train.iloc[val_idx][target_col])
+    train_set = lgb.Dataset(df_train.iloc[trn_idx][x_features], df_train.iloc[trn_idx][target_col], categorical_feature=cat_features)
+    val_set = lgb.Dataset(df_train.iloc[val_idx][x_features], df_train.iloc[val_idx][target_col], categorical_feature=cat_features)
     print('train:{}_val:{}'.format(df_train.iloc[trn_idx][x_features].shape, df_train.iloc[val_idx][x_features].shape))
     t0 = time.time()
 
