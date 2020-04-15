@@ -16,7 +16,7 @@ from wrmse import weight_calc
 use_top_importance = False
 num_features = 50
 
-result_dir = './result/set_seed/baseline_shop_no_price_again_add_4weekdays_stat_std_shop_cumsum_zerodem/'
+result_dir = './result/set_seed/ch_params/baseline_shop_no_price_again_add_4weekdays_stat_std_shop_cumsum_zerodem/'
 os.makedirs(result_dir, exist_ok=True)
 print(result_dir)
 
@@ -216,7 +216,9 @@ params = {
     'lambda': 0.1,
     'bagging_fraction': 0.66,
     'bagging_freq': 2,
-    'colsample_bytree': 0.77
+    'colsample_bytree': 0.77,
+    "min_data_in_leaf": 100,
+    "max_depth": 8
     }
 
 model = lgb.train(
