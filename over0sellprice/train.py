@@ -16,7 +16,7 @@ from wrmse import weight_calc
 use_top_importance = False
 num_features = 50
 
-result_dir = './result/set_seed/shop_no_price_again_add_4weekdays_stat_std_shop_cumsum_zerodem_encho/'
+result_dir = './result/set_seed/shop_no_price_again_add_4weekdays_stat_std_shop_cumsum_zerodem_encho_rmse/'
 os.makedirs(result_dir, exist_ok=True)
 print(result_dir)
 
@@ -134,30 +134,30 @@ print('########################')
 print('########################')
 print('preparea_wrmse...')
 t0 = time.time()
-weight1, weight2, weight_mat_csr = weight_calc(df_all)
+# weight1, weight2, weight_mat_csr = weight_calc(df_all)
 
 
-def wrmsse(preds, data):
-    DAYS_PRED = 28
-    NUM_ITEMS = 30490
-    # this function is calculate for last 28 days to consider the non-zero demand period
-    # actual obserbed values / 正解ラベル
-    y_true = data.get_label()
+# def wrmsse(preds, data):
+#     DAYS_PRED = 28
+#     NUM_ITEMS = 30490
+#     # this function is calculate for last 28 days to consider the non-zero demand period
+#     # actual obserbed values / 正解ラベル
+#     y_true = data.get_label()
 
-    y_true = y_true[-(NUM_ITEMS * DAYS_PRED):]
-    preds = preds[-(NUM_ITEMS * DAYS_PRED):]
-    # number of columns
-    num_col = DAYS_PRED
+#     y_true = y_true[-(NUM_ITEMS * DAYS_PRED):]
+#     preds = preds[-(NUM_ITEMS * DAYS_PRED):]
+#     # number of columns
+#     num_col = DAYS_PRED
 
-    # reshape data to original array((NUM_ITEMS*num_col,1)->(NUM_ITEMS, num_col) ) / 推論の結果が 1 次元の配列になっているので直す
-    reshaped_preds = preds.reshape(num_col, NUM_ITEMS).T
-    reshaped_true = y_true.reshape(num_col, NUM_ITEMS).T
-    train = weight_mat_csr*np.c_[reshaped_preds, reshaped_true]
-    score = np.sum(
-                np.sqrt(
-                    np.mean(
-                        np.square(train[:, :num_col] - train[:, num_col:]), axis=1) / weight1) * weight2)
-    return 'wrmsse', score, False
+#     # reshape data to original array((NUM_ITEMS*num_col,1)->(NUM_ITEMS, num_col) ) / 推論の結果が 1 次元の配列になっているので直す
+#     reshaped_preds = preds.reshape(num_col, NUM_ITEMS).T
+#     reshaped_true = y_true.reshape(num_col, NUM_ITEMS).T
+#     train = weight_mat_csr*np.c_[reshaped_preds, reshaped_true]
+#     score = np.sum(
+#                 np.sqrt(
+#                     np.mean(
+#                         np.square(train[:, :num_col] - train[:, num_col:]), axis=1) / weight1) * weight2)
+#     return 'wrmsse', score, False
 
 
 t1 = time.time()
@@ -208,7 +208,7 @@ print('########################')
 print('########################')
 print('learning..')
 params = {
-    'metric': ('custom', 'rmse'),
+    'metric': 'rmse',
     'objective': 'poisson',
     'n_jobs': -1,
     'seed': 20,
@@ -226,7 +226,7 @@ model = lgb.train(
     num_boost_round=5000,
     early_stopping_rounds=200,
     valid_sets=[train_set, val_set],
-    feval=wrmsse,
+    # feval=wrmsse,
     verbose_eval=50)
 model_path = os.path.join(result_dir, 'model.lgb')
 model.save_model(model_path)
@@ -262,8 +262,8 @@ print('########################')
 print('metric...')
 val_RMSE = model.best_score['valid_1']['rmse']
 print('MSE:{}'.format(val_RMSE))
-val_WRMSSE = model.best_score['valid_1']['wrmsse']
-print('WRMSSE:{}'.format(val_WRMSSE))
+# val_WRMSSE = model.best_score['valid_1']['wrmsse']
+# print('WRMSSE:{}'.format(val_WRMSSE))
 print('########################')
 ########################
 
@@ -291,6 +291,7 @@ def predict(test, submission, csv_path):
     final.to_csv(csv_path, index=False)
 
 
+val_WRMSSE = 99999
 submission = pd.read_csv('../input/sample_submission.csv')
 print('sub_shape:{}'.format(submission.shape))
 csv_path = os.path.join(result_dir, 'RMSE_{}_WRMSSE{}.csv'.format(val_RMSE, val_WRMSSE))
