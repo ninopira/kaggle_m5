@@ -72,7 +72,11 @@ df_all['gap_days'] = pd.concat(s_list)
 df_all['gap_e'] = pd.concat(e_list)
 df_all['sale_prob'] = pd.concat(p_list)
 
-df_feat = df_all[['id', 'date', 'gap_days', 'gap_e', 'sale_prob']]
+df_all['gap_days_lag_28'] = df_all.groupby(["id"])["gap_days"].transform(lambda x: x.shift(28))
+df_all['gap_e_lag_28'] = df_all.groupby(["id"])["gap_e"].transform(lambda x: x.shift(28))
+df_all['sale_prob_lag_28'] = df_all.groupby(["id"])["sale_prob"].transform(lambda x: x.shift(28))
+
+df_feat = df_all[['id', 'date', 'gap_days_lag_28', 'gap_e_lag_28', 'sale_prob_lag_28']]
 
 print(df_feat.head())
 print(df_feat.tail())
