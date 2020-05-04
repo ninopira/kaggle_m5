@@ -25,10 +25,14 @@ df_new['diff_lag_ave_sales_day_store_dept1'] = (df_new["day_store_dept_sales_mea
 
 df_f = df_new[['id', 'date', 'day_store_dept_sales_mean_price', 'diff_ave_sales_day_store_dept', 'diff_lag_ave_sales_day_store_dept1']]
 
+for val in [7, 30, 60, 90, 180]:
+    colname = f"diff_ave_sales_day_store_dept_mean_{val}"
+    df_f[colname] = df_f.groupby(['id'])["diff_ave_sales_day_store_dept"].transform(lambda x: x.rolling(val).mean())
+
 print(df_f.shape)
 del df_all
 gc.collect()
 
-df_f.to_pickle('f_diff_ave_sales_day_store_dept.pkl')
+df_f.to_pickle('f_diff_ave_sales_day_store_dept_add_mean.pkl')
 
 print('done')
