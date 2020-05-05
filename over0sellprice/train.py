@@ -16,7 +16,7 @@ from wrmse import weight_calc
 use_top_importance = False
 num_features = 50
 
-result_dir = './result/set_seed/baseline_shop_no_price_again_add_4weekdays_stat_std_shop_cumsum_zerodem_dem_shop/'
+result_dir = './result/set_seed/baseline_shop_no_price_again_add_4weekdays_stat_std_shop_cumsum_zerodem_dem_shop_no_roll/'
 os.makedirs(result_dir, exist_ok=True)
 print(result_dir)
 
@@ -42,7 +42,7 @@ print('before_merged_shape:{}'.format(df_all.shape))
 t0_all = time.time()
 
 f_paths = [
-    './feature/shop/f_diff_ave_lag28demand_day_store_dept.pkl',
+    './feature/shop/f_diff_ave_lag28demand_day_store_dept_no_rolling.pkl',
     './feature/zero_demand/f_id_zero_demand.pkl',
     './feature/cumsum/f_id_cumsum_demand.pkl',
     './feature/shop/f_diff_ave_sales_day_store_dept_std.pkl',
