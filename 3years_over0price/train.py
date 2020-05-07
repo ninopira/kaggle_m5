@@ -16,7 +16,7 @@ from wrmse import weight_calc
 use_top_importance = False
 num_features = 50
 
-result_dir = './result/set_seed/baseline_shop_no_price_again_add_4weekdays_stat_std_shop_cumsum_zerodem_dem_shop_std_no_roll/'
+result_dir = './result/set_seed/1.02baseline_shop_no_price_again_add_4weekdays_stat_std_shop_cumsum_zerodem_dem_shop_std_no_roll/'
 os.makedirs(result_dir, exist_ok=True)
 print(result_dir)
 
@@ -274,7 +274,7 @@ print('########################')
 print('predict_test')
 
 y_pred = model.predict(df_test[x_features], num_iteration=model.best_iteration)
-df_test['demand'] = y_pred
+df_test['demand'] = y_pred * 1.02
 
 
 def predict(test, submission, csv_path):
