@@ -229,18 +229,17 @@ for num in ['1st', '2nd']:
     evaluator = WRMSSEEvaluator(train_fold_df, valid_fold_df, calendar, sell_prices)
     evaluator_list.append(evaluator)
 
-    print('train...')
     train_set = lgb.Dataset(df_train[x_features], df_train[target_col], weight=ajust_weight_train)
     val_set = lgb.Dataset(df_val[x_features], df_val[target_col], weight=ajust_weight_val)
-    print('train')
+    print('start_learn')
     evals_result = {}
     model = lgb.train(
             params,
             train_set,
-            num_boost_round=5,
+            num_boost_round=5000,
             early_stopping_rounds=200,
             valid_sets=[train_set, val_set],
-            verbose_eval=2)
+            verbose_eval=100)
     # 書き出し
     model_path = os.path.join(result_dir, f'model_{num}.lgb')
     model.save_model(model_path)
