@@ -19,7 +19,7 @@ from reduce_mem import reduce_mem_usage
 from metric import WRMSSEEvaluator
 
 
-fake_val = True
+fake_val = False
 result_dir = './result/set_seed_all_train/fake_val_{}/baseline_shop_no_price_again_add_4weekdays_stat_std_shop_cumsum_zerodem_dem_shop_std_no_roll/'.format(fake_val)
 os.makedirs(result_dir, exist_ok=True)
 print(result_dir)
@@ -234,9 +234,9 @@ else:
     model = lgb.train(
             params,
             train_set,
-            num_boost_round=5,
+            num_boost_round=2000,
             valid_sets=[train_set],
-            verbose_eval=2)
+            verbose_eval=50)
 # 書き出し
 model_path = os.path.join(result_dir, f'model.lgb')
 model.save_model(model_path)
