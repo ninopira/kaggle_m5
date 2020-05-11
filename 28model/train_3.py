@@ -15,7 +15,7 @@ from reduce_mem import reduce_mem_usage
 from metric import WRMSSEEvaluator
 
 
-days = 27
+days = 3
 extract_test_day = datetime.datetime(2016, 4, 24) + datetime.timedelta(days=days)
 extract_test_day = extract_test_day.strftime('%Y-%m-%d')
 print(extract_test_day)
@@ -239,7 +239,7 @@ for num in ['1st', '2nd']:
             num_boost_round=5000,
             early_stopping_rounds=200,
             valid_sets=[train_set, val_set],
-            verbose_eval=200)
+            verbose_eval=50)
     # モデル書き出し
     model_path = os.path.join(result_dir, f'model_days{days}_val{num}.lgb')
     model.save_model(model_path)

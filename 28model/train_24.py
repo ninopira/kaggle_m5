@@ -15,7 +15,7 @@ from reduce_mem import reduce_mem_usage
 from metric import WRMSSEEvaluator
 
 
-days = 27
+days = 24
 extract_test_day = datetime.datetime(2016, 4, 24) + datetime.timedelta(days=days)
 extract_test_day = extract_test_day.strftime('%Y-%m-%d')
 print(extract_test_day)
