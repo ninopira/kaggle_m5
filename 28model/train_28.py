@@ -63,27 +63,28 @@ print('merge_features...')
 print('before_merged_shape:{}'.format(df_all.shape))
 t0_all = time.time()
 
-# f_paths = [
-#     './feature/trend_demand/f_week_trend.pkl',
-#     './feature/shop/f_devine_ave_lag28demand_day_store_dept_no_roll.pkl',
-#     './feature/shop/f_diff_ave_lag28demand_day_store_dept_no_rolling.pkl',
-#     './feature/zero_demand/f_id_zero_demand.pkl',
-#     './feature/cumsum/f_id_cumsum_demand.pkl',
-#     './feature/shop/f_diff_ave_sales_day_store_dept_std.pkl',
-#     './feature/lag_demand/f_id_lag_demand_4weekdays_stat.pkl',
-#     './feature/shop/f_diff_ave_sales_day_store_dept.pkl',
-#     './feature/lag_demand/f_id_lag_demand.pkl',
-#     './feature/lag_sales/f_id_lag_sales.pkl'
-# ]
-
 f_paths = [
     # cumsum
     f'./feature/cumsum/f_id_cumsum_demand_{days}.pkl',
+    './feature/cumsum/f_id_cumsum_demand_90.pkl',
+    './feature/cumsum/f_id_cumsum_demand_120.pkl',
+    './feature/cumsum/f_id_cumsum_demand_180.pkl',
+    './feature/cumsum/f_id_cumsum_demand_220.pkl',
+    './feature/cumsum/f_id_cumsum_demand_364.pkl',
+    # lag demnad
+    f'./feature/lag_demand/f_id_demand_lag_{days}.pkl',
+    f'./feature/lag_demand/f_id_lag_demand_{days}_roll.pkl',
+    # lag sales
+    './feature/lag_sales/f_id_lag_sales.pkl',
     # shop
-    # f'./feature/shop/f_devine_ave_lag{days}demand_day_store_dept_no_roll.pkl',
-    # f'./feature/shop/f_diff_ave_lag{days}demand_day_store_dept_no_rolling.pkl',
-    # './feature/shop/f_diff_ave_sales_day_store_dept.pkl',
-    # './feature/shop/f_diff_ave_sales_day_store_dept_std.pkl',
+    f'./feature/shop/f_diff_ave_lag{days}demand_day_store_dept_no_rolling.pkl',
+    f'./feature/shop/f_devine_ave_lag{days}demand_day_store_dept_no_roll.pkl',
+    './feature/shop/f_diff_ave_sales_day_store_dept.pkl',
+    './feature/shop/f_diff_ave_sales_day_store_dept_std.pkl',
+    # trend_week
+    f'./feature/trend_week/f_week_trend_{days}.pkl',
+    # zero dem
+    f'./feature/zero_demand/f_zero_demand_{days}.pkl',
 ]
 
 for f_path in f_paths:
@@ -235,10 +236,10 @@ for num in ['1st', '2nd']:
     model = lgb.train(
             params,
             train_set,
-            num_boost_round=5,
+            num_boost_round=5000,
             early_stopping_rounds=200,
             valid_sets=[train_set, val_set],
-            verbose_eval=3)
+            verbose_eval=200)
     # モデル書き出し
     model_path = os.path.join(result_dir, f'model_days{days}_val{num}.lgb')
     model.save_model(model_path)
