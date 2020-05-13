@@ -20,7 +20,7 @@ extract_test_day = datetime.datetime(2016, 4, 24) + datetime.timedelta(days=days
 extract_test_day = extract_test_day.strftime('%Y-%m-%d')
 print(extract_test_day)
 
-result_dir = f'./result/28model/no_price_shop_cumsum_zerodem_dem_shop_std_week_trend_4weekstat/day{days}'
+result_dir = f'./result/28model/no_price_shop_cumsum_zerodem_dem_shop_std_week_trend_4weekstat_more_lag/day{days}'
 os.makedirs(result_dir, exist_ok=True)
 print(result_dir)
 
@@ -73,6 +73,8 @@ f_paths = [
     './feature/cumsum/f_id_cumsum_demand_364.pkl',
     # lag demnad
     f'./feature/lag_demand/f_id_demand_lag_{days}.pkl',
+    f'./feature/lag_demand/f_id_demand_lag_{days+1}.pkl',
+    f'./feature/lag_demand/f_id_demand_lag_{days+2}.pkl',
     f'./feature/lag_demand/f_id_lag_demand_{days}_roll.pkl',
     # lag sales
     './feature/lag_sales/f_id_lag_sales.pkl',
