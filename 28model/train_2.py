@@ -20,7 +20,7 @@ extract_test_day = datetime.datetime(2016, 4, 24) + datetime.timedelta(days=days
 extract_test_day = extract_test_day.strftime('%Y-%m-%d')
 print(extract_test_day)
 
-result_dir = f'./result/28model/no_price_shop_cumsum_zerodem_dem_shop_std_week_trend/day{days}'
+result_dir = f'./result/28model/no_price_shop_cumsum_zerodem_dem_shop_std_week_trend_4weekstat/day{days}'
 os.makedirs(result_dir, exist_ok=True)
 print(result_dir)
 
@@ -85,6 +85,8 @@ f_paths = [
     f'./feature/trend_week/f_week_trend_{days}.pkl',
     # zero dem
     f'./feature/zero_demand/f_zero_demand_{days}.pkl',
+    # 4weeks
+    f'./feature/lag4weeks/f_id_lag_demand_4weekdays_stat_{days}.pkl'
 ]
 
 for f_path in f_paths:
@@ -239,7 +241,7 @@ for num in ['1st', '2nd']:
             num_boost_round=5000,
             early_stopping_rounds=200,
             valid_sets=[train_set, val_set],
-            verbose_eval=50)
+            verbose_eval=200)
     # モデル書き出し
     model_path = os.path.join(result_dir, f'model_days{days}_val{num}.lgb')
     model.save_model(model_path)
