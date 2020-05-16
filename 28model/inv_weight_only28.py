@@ -20,7 +20,7 @@ print('read_scale_weight')
 df_scale_weight = pd.read_pickle('./scale_weight.pkl')
 print(df_scale_weight.shape)
 t1 = time.time()
-print('read_transfomed_data:{0}'.format(t1-t0) + '[sec]')
+print('read_scale_weight:{0}'.format(t1-t0) + '[sec]')
 
 print('read_other_data')
 t0 = time.time()
@@ -88,14 +88,20 @@ print(wrmsse_score_list)
 
 df_test = pd.read_csv('./result/28model/no_price_shop_cumsum_zerodem_dem_shop_std_week_trend_4weekstat_more_lag/day28/sub_28_WRMSSE_0.638961382694934_0.5618771408242472.csv')
 df_test_inv = pd.read_csv('./result/28model_inv/no_price_shop_cumsum_zerodem_dem_shop_std_week_trend_4weekstat_more_lag/day28/sub_28_WRMSSE_0.6562263489729164_0.5427298048948264.csv')
+print(df_test.shape, df_test_inv.shape)
+print(len(df_test['id'].unique()), len(df_test_inv['id'].unique()))
 
 # melt
 df_test_melt = pd.melt(df_test, id_vars=['id'], var_name='day', value_name='demand')
 df_test_inv_melt = pd.melt(df_test_inv, id_vars=['id'], var_name='day', value_name='demand')
 df_test_final = df_test_melt.copy()
+print(len(df_test_melt['id'].unique()), len(df_test_inv_melt['id'].unique()))
+print(len(df_test_melt['day'].unique()), len(df_test_inv_melt['day'].unique()))
+print(df_test_final.head())
 # weight
 df_test_melt = pd.merge(df_test_melt,  df_scale_weight[['id', 'ajust_weight']], how="left", on="id")
 df_test_inv_melt = pd.merge(df_test_inv_melt,  df_scale_weight[['id', 'ajust_weight']], how="left", on="id")
+print(df_test_melt.shape, df_test_inv_melt.shape, df_test_final.shape)
 # weight
 ajust_weight_test = df_test_melt['ajust_weight']
 inv_ajust_weight_test = [1 / w for w in df_test_inv_melt['ajust_weight']]
@@ -110,19 +116,23 @@ def predict(test, submission, csv_path):
         predictions = test[['id', 'day', 'demand']]
         predictions = pd.pivot(predictions, index='id', columns='day', values='demand').reset_index()
         predictions.columns = ['id'] + ['F' + str(i + 1) for i in range(28)]
+        print('pivot', predictions.shape)
+
+        validation_rows = [row for row in submission['id'] if 'validation' in row]
+        validation = submission[submission['id'].isin(validation_rows)]
+        validation = validation[['id']].merge(predictions, on=['id'])
 
         evaluation_rows = [row for row in submission['id'] if 'evaluation' in row]
         evaluation = submission[submission['id'].isin(evaluation_rows)]
 
-        validation = submission[['id']].merge(predictions, on='id')
         final = pd.concat([validation, evaluation])
         print(final.head())
-        print(final.shape)
+        print('f_sub', final.shape)
         final.to_csv(csv_path, index=False)
 
 result_dir = './result/28model_inv/no_price_shop_cumsum_zerodem_dem_shop_std_week_trend_4weekstat_more_lag/day28/'
 submission = pd.read_csv('../input/sample_submission.csv')
-print(submission.shape)
+print('ori_sub', submission.shape)
 csv_path = os.path.join(result_dir, 'sub_ems_WRMSSE_{}_{}.csv'.format(wrmsse_score_list[0], wrmsse_score_list[1]))
 predict(df_test_final, submission, csv_path)
 
