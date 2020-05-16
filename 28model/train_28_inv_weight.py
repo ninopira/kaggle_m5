@@ -311,7 +311,7 @@ for num in ['1st', '2nd']:
         wrmsse_score_list.append(wrmsse_score)
         print("WRMSSE：", round(wrmsse_score, 4))
         # all_valの書き出し
-        val_pkl_path = os.path.join(result_dir, f'days{days}_val_all.pkl')
+        val_pkl_path = os.path.join(result_dir, f'days{days}_val_all_{num}.pkl')
         print(val_pkl_path)
         df_val.to_pickle(val_pkl_path)
     t1 = time.time()
