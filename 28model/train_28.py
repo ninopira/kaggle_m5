@@ -20,7 +20,7 @@ extract_test_day = datetime.datetime(2016, 4, 24) + datetime.timedelta(days=days
 extract_test_day = extract_test_day.strftime('%Y-%m-%d')
 print(extract_test_day)
 
-result_dir = f'./result/28model/no_price_shop_cumsum_zerodem_dem_shop_std_week_trend_4weekstat_more_lag/day{days}'
+result_dir = f'./result/28model/tw_no_price_shop_cumsum_zerodem_dem_shop_std_week_trend_4weekstat_more_lag/day{days}'
 os.makedirs(result_dir, exist_ok=True)
 print(result_dir)
 
@@ -185,7 +185,7 @@ df_test = df_all.query('date > "2016-04-24" and date <= "2016-05-22"')
 
 params = {
     'metric': 'rmse',
-    'objective': 'poisson',
+    'objective': 'tweedie',
     'n_jobs': -1,
     'seed': 20,
     'learning_rate': 0.05,
