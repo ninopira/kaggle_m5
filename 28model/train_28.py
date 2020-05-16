@@ -307,6 +307,10 @@ for num in ['1st', '2nd']:
         wrmsse_score = evaluator.score(valid_preds.drop(id_columns, axis=1))
         wrmsse_score_list.append(wrmsse_score)
         print("WRMSSE：", round(wrmsse_score, 4))
+        # all_valの書き出し
+        val_pkl_path = os.path.join(result_dir, f'days{days}_val_all_{num}.pkl')
+        print(val_pkl_path)
+        df_val.to_pickle(val_pkl_path)
     t1 = time.time()
     print('train_{}:{}'.format(num, t1-t0) + '[sec]')
     print('########################')
