@@ -114,8 +114,8 @@ df_test_final['demand'] = (df_test_melt['demand'] * ajust_weight_test + df_test_
 print(df_test_final.head())
 print(df_test_final.shape)
 # meanの比較
-print('ori_mean', df_test_melt['demand'].mean())
-print('inv_mean', df_test_inv_melt['demand'].mean())
+print('ori_mean', df_test_melt.query('demand > 0')['demand'].mean())
+print('inv_mean', df_test_inv_melt.query('demand > 0')['demand'].mean())
 print('ems', df_test_final['demand'].mean())
 
 
