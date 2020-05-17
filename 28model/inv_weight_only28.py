@@ -88,60 +88,35 @@ print(wrmsse_score_list)
 
 df_test = pd.read_csv('./result/28model/no_price_shop_cumsum_zerodem_dem_shop_std_week_trend_4weekstat_more_lag/day28/sub_28_WRMSSE_0.638961382694934_0.5618771408242472.csv')
 df_test_inv = pd.read_csv('./result/28model_inv/no_price_shop_cumsum_zerodem_dem_shop_std_week_trend_4weekstat_more_lag/day28/sub_28_WRMSSE_0.6562263489729164_0.5427298048948264.csv')
+df_test_final = df_test.copy()
 print(df_test.shape, df_test_inv.shape)
 print(len(df_test['id'].unique()), len(df_test_inv['id'].unique()))
 
-# melt
-df_test_melt = pd.melt(df_test, id_vars=['id'], var_name='day', value_name='demand')
-df_test_inv_melt = pd.melt(df_test_inv, id_vars=['id'], var_name='day', value_name='demand')
-df_test_final = df_test_melt.copy()
-print(len(df_test_melt['id'].unique()), len(df_test_inv_melt['id'].unique()))
-print(len(df_test_melt['day'].unique()), len(df_test_inv_melt['day'].unique()))
-print(df_test_final.head())
 # weight
-df_test_melt = pd.merge(df_test_melt,  df_scale_weight[['id', 'ajust_weight']], how="left", on="id")
-df_test_inv_melt = pd.merge(df_test_inv_melt,  df_scale_weight[['id', 'ajust_weight']], how="left", on="id")
-print(df_test_melt.shape, df_test_inv_melt.shape, df_test_final.shape)
+df_test = pd.merge(df_test,  df_scale_weight[['id', 'ajust_weight']], how="left", on="id")
+df_test_inv = pd.merge(df_test_inv,  df_scale_weight[['id', 'ajust_weight']], how="left", on="id")
+print(df_test.shape, df_test_inv.shape, df_test_final.shape)
+
 # weight
-ajust_weight_test = df_test_melt['ajust_weight']
-inv_ajust_weight_test = [1 / w for w in df_test_inv_melt['ajust_weight']]
+ajust_weight_test = df_test['ajust_weight']
+inv_ajust_weight_test = [1 / w for w in df_test_inv['ajust_weight']]
 # 足して1になるようにする
 weight_test_sum = [we + inv for (we, inv) in zip(ajust_weight_test, inv_ajust_weight_test)]
 ajust_weight_test = [we / we_sum for (we, we_sum) in zip(ajust_weight_test, weight_test_sum)]
 inv_ajust_weight_test = [we / we_sum for (we, we_sum) in zip(inv_ajust_weight_test, weight_test_sum)]
 # 重み付け
-df_test_final['demand'] = (df_test_melt['demand'] * ajust_weight_test + df_test_inv_melt['demand'] * inv_ajust_weight_test) / [we + inv for (we, inv) in zip(ajust_weight_test, inv_ajust_weight_test)]
+for col in ['F' + str(i + 1) for i in range(28)]:
+    df_test_final[col] = df_test[col] * ajust_weight_test + df_test_inv[col] * inv_ajust_weight_test
+    df_test_final[col].fillna(0, inplace=True)
+    print(col)
+    print('ori', df_test[col].mean())
+    print('inv', df_test_inv[col].mean())
+    print('final', df_test_final[col].mean())
 print(df_test_final.head())
 print(df_test_final.shape)
-# meanの比較
-print('ori_mean', df_test_melt.query('demand > 0')['demand'].mean())
-print('inv_mean', df_test_inv_melt.query('demand > 0')['demand'].mean())
-print('ems', df_test_final['demand'].mean())
-
-
-def predict(test, submission, csv_path):
-    predictions = test[['id', 'day', 'demand']]
-    predictions = pd.pivot(predictions, index='id', columns='day', values='demand').reset_index()
-    predictions.columns = ['id'] + ['F' + str(i + 1) for i in range(28)]
-    print('pivot', predictions.shape)
-
-    validation_rows = [row for row in submission['id'] if 'validation' in row]
-    validation = submission[submission['id'].isin(validation_rows)]
-    validation = validation[['id']].merge(predictions, on=['id'])
-
-    evaluation_rows = [row for row in submission['id'] if 'evaluation' in row]
-    evaluation = submission[submission['id'].isin(evaluation_rows)]
-
-    final = pd.concat([validation, evaluation])
-    print(final.head())
-    print('f_sub', final.shape)
-    final.to_csv(csv_path, index=False)
 
 result_dir = './result/28model_inv/no_price_shop_cumsum_zerodem_dem_shop_std_week_trend_4weekstat_more_lag/day28/'
 submission = pd.read_csv('../input/sample_submission.csv')
 print('ori_sub', submission.shape)
 csv_path = os.path.join(result_dir, 'sub_ems_WRMSSE_{}_{}.csv'.format(wrmsse_score_list[0], wrmsse_score_list[1]))
-predict(df_test_final, submission, csv_path)
-
-
-
+df_test_final.to_csv(csv_path, index=False)
