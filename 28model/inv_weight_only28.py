@@ -105,30 +105,37 @@ print(df_test_melt.shape, df_test_inv_melt.shape, df_test_final.shape)
 # weight
 ajust_weight_test = df_test_melt['ajust_weight']
 inv_ajust_weight_test = [1 / w for w in df_test_inv_melt['ajust_weight']]
-
+# 足して1になるようにする
+weight_test_sum = [we + inv for (we, inv) in zip(ajust_weight_test, inv_ajust_weight_test)]
+ajust_weight_test = [we / we_sum for (we, we_sum) in zip(ajust_weight_test, weight_test_sum)]
+inv_ajust_weight_test = [we / we_sum for (we, we_sum) in zip(inv_ajust_weight_test, weight_test_sum)]
 # 重み付け
 df_test_final['demand'] = (df_test_melt['demand'] * ajust_weight_test + df_test_inv_melt['demand'] * inv_ajust_weight_test) / [we + inv for (we, inv) in zip(ajust_weight_test, inv_ajust_weight_test)]
 print(df_test_final.head())
 print(df_test_final.shape)
+# meanの比較
+print('ori_mean', df_test_melt['demand'].mean())
+print('inv_mean', df_test_inv_melt['demand'].mean())
+print('ems', df_test_final['demand'].mean())
 
 
 def predict(test, submission, csv_path):
-        predictions = test[['id', 'day', 'demand']]
-        predictions = pd.pivot(predictions, index='id', columns='day', values='demand').reset_index()
-        predictions.columns = ['id'] + ['F' + str(i + 1) for i in range(28)]
-        print('pivot', predictions.shape)
+    predictions = test[['id', 'day', 'demand']]
+    predictions = pd.pivot(predictions, index='id', columns='day', values='demand').reset_index()
+    predictions.columns = ['id'] + ['F' + str(i + 1) for i in range(28)]
+    print('pivot', predictions.shape)
 
-        validation_rows = [row for row in submission['id'] if 'validation' in row]
-        validation = submission[submission['id'].isin(validation_rows)]
-        validation = validation[['id']].merge(predictions, on=['id'])
+    validation_rows = [row for row in submission['id'] if 'validation' in row]
+    validation = submission[submission['id'].isin(validation_rows)]
+    validation = validation[['id']].merge(predictions, on=['id'])
 
-        evaluation_rows = [row for row in submission['id'] if 'evaluation' in row]
-        evaluation = submission[submission['id'].isin(evaluation_rows)]
+    evaluation_rows = [row for row in submission['id'] if 'evaluation' in row]
+    evaluation = submission[submission['id'].isin(evaluation_rows)]
 
-        final = pd.concat([validation, evaluation])
-        print(final.head())
-        print('f_sub', final.shape)
-        final.to_csv(csv_path, index=False)
+    final = pd.concat([validation, evaluation])
+    print(final.head())
+    print('f_sub', final.shape)
+    final.to_csv(csv_path, index=False)
 
 result_dir = './result/28model_inv/no_price_shop_cumsum_zerodem_dem_shop_std_week_trend_4weekstat_more_lag/day28/'
 submission = pd.read_csv('../input/sample_submission.csv')
