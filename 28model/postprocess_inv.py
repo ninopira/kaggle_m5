@@ -43,7 +43,7 @@ for num in ['1st', '2nd']:
     df_vals = pd.DataFrame()
     for days in range(1, 29):
         print('days', days)
-        result_dir = f'./result/28model/no_price_shop_cumsum_zerodem_dem_shop_std_week_trend_4weekstat_more_lag/day{days}'
+        result_dir = f'./result/28model_inv/no_price_shop_cumsum_zerodem_dem_shop_std_week_trend_4weekstat_more_lag/day{days}'
         val_pkl_path = os.path.join(result_dir, f'days{days}_val{num}.pkl')
         df_val_extract = pd.read_pickle(val_pkl_path)
         print(num, 'extract_day', df_val_extract['date'].unique(), df_val_extract.shape)
@@ -64,7 +64,7 @@ for num in ['1st', '2nd']:
     print('build_evaluater...')
     evaluator = WRMSSEEvaluator(train_fold_df, valid_fold_df, calendar, sell_prices)
     df_vals = df_vals[['id', 'date', 'demand']]
-    df_vals.to_pickle(f'./result/28model/no_price_shop_cumsum_zerodem_dem_shop_std_week_trend_4weekstat_more_lag/val_all_{num}.pkl')
+    df_vals.to_pickle(f'./result/28model_inv/no_price_shop_cumsum_zerodem_dem_shop_std_week_trend_4weekstat_more_lag/val_all_{num}.pkl')
     df_vals = pd.pivot(df_vals, index='id', columns='date', values='demand').reset_index()
     df_vals.columns = ['id'] + ['d_' + str(i + 1) for i in range(tr_val_date[num]['train_end_date_num'], tr_val_date[num]['train_end_date_num']+28)]
     id_columns = ['id', 'item_id', 'dept_id', 'cat_id', 'store_id', 'state_id']
@@ -79,7 +79,7 @@ print('test')
 df_tests = pd.DataFrame()
 for days in range(1, 29):
     print('days', days)
-    result_dir = f'./result/28model/no_price_shop_cumsum_zerodem_dem_shop_std_week_trend_4weekstat_more_lag/day{days}'
+    result_dir = f'./result/28model_inv/no_price_shop_cumsum_zerodem_dem_shop_std_week_trend_4weekstat_more_lag/day{days}'
     test_pkl_path = os.path.join(result_dir, f'days{days}_test.pkl')
     df_test_extract = pd.read_pickle(test_pkl_path)
     print(num, 'extract_day', df_test_extract['date'].unique(), df_test_extract.shape)
@@ -107,10 +107,10 @@ def predict(test, submission, csv_path):
     final.to_csv(csv_path, index=False)
 
 
-result_dir = f'./result/28model/no_price_shop_cumsum_zerodem_dem_shop_std_week_trend_4weekstat_more_lag/'
+result_dir = f'./result/28model_inv/no_price_shop_cumsum_zerodem_dem_shop_std_week_trend_4weekstat_more_lag/'
 
 submission = pd.read_csv('../input/sample_submission.csv')
-csv_path = os.path.join(result_dir, 'sub_WRMSSE_{}_{}.csv'.format(wrmsse_score_list[0], wrmsse_score_list[1]))
+csv_path = os.path.join(result_dir, 'sub_inv_WRMSSE_{}_{}.csv'.format(wrmsse_score_list[0], wrmsse_score_list[1]))
 predict(df_tests, submission, csv_path)
 
 
