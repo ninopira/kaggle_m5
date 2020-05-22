@@ -20,7 +20,7 @@ extract_test_day = datetime.datetime(2016, 4, 24) + datetime.timedelta(days=days
 extract_test_day = extract_test_day.strftime('%Y-%m-%d')
 print(extract_test_day)
 
-result_dir = f'./result/28model/no_price_shop_cumsum_zerodem_dem_shop_std_week_trend_4weekstat_more_lag/day{days}'
+result_dir = f'./result/28model/no_price_shop_cumsum_zerodem_dem_shop_std_week_trend_4weekstat_more_lag_more/day{days}'
 os.makedirs(result_dir, exist_ok=True)
 print(result_dir)
 
@@ -90,6 +90,12 @@ f_paths = [
     # 4weeks
     f'./feature/lag4weeks/f_id_lag_demand_4weekdays_stat_{days}.pkl'
 ]
+for day in [6, 7, 8, 13, 14, 15, 20, 21, 22]:
+    if day != days:
+        if days < day:
+            f_paths.append(f'./feature/lag_demand/f_id_demand_lag_{day}.pkl')
+            print('add', f'./feature/lag_demand/f_id_demand_lag_{day}.pkl')
+
 
 for f_path in f_paths:
     t0 = time.time()
