@@ -20,7 +20,7 @@ extract_test_day = datetime.datetime(2016, 4, 24) + datetime.timedelta(days=days
 extract_test_day = extract_test_day.strftime('%Y-%m-%d')
 print(extract_test_day)
 
-result_dir = f'./result/28model/no_price_shop_cumsum_zerodem_dem_shop_std_week_trend_4weekstat_more_lag/day{days}'
+result_dir = f'./result/28model/no_price_shop_cumsum_zerodem_dem_shop_std_week_trend_4weekstat_more_lag_ch_kernel_params/day{days}'
 os.makedirs(result_dir, exist_ok=True)
 print(result_dir)
 
@@ -182,18 +182,24 @@ tr_val_date = {
 
 print('sep_test...')
 df_test = df_all.query('date > "2016-04-24" and date <= "2016-05-22"')
-
+# https://www.kaggle.com/ejunichi/m5-three-shades-of-dark-darker-magic
 params = {
+    'boosting_type': 'gbdt',
+    'objective': 'tweedie',
+    'tweedie_variance_power': 1.1,
     'metric': 'rmse',
-    'objective': 'poisson',
-    'n_jobs': -1,
-    'seed': 20,
-    'learning_rate': 0.05,
-    'alpha': 0.1,
-    'lambda': 0.1,
-    'bagging_fraction': 0.66,
-    'bagging_freq': 2,
-    'colsample_bytree': 0.77}
+    'subsample': 0.5,
+    'subsample_freq': 1,
+    'learning_rate': 0.03,
+    'num_leaves': 2**11-1,
+    'min_data_in_leaf': 2**12-1,
+    'feature_fraction': 0.5,
+    'max_bin': 100,
+    'n_estimators': 1400,
+    'boost_from_average': False,
+    'verbose': -1}
+
+print(params)
 
 
 # 元dfに対して予測して、wide_formatで返す関数
