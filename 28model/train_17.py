@@ -185,12 +185,12 @@ df_test = df_all.query('date > "2016-04-24" and date <= "2016-05-22"')
 # https://www.kaggle.com/ejunichi/m5-three-shades-of-dark-darker-magic
 params = {
     'boosting_type': 'gbdt',
-    'objective': 'tweedie',
-    'tweedie_variance_power': 1.1,
+    'objective': 'poisson',
+    # 'tweedie_variance_power': 1.1,
     'metric': 'rmse',
     'subsample': 0.5,
     'subsample_freq': 1,
-    'learning_rate': 0.03,
+    'learning_rate': 0.07,
     'num_leaves': 2**11-1,
     'min_data_in_leaf': 2**12-1,
     'feature_fraction': 0.5,
@@ -249,7 +249,7 @@ for num in ['1st', '2nd']:
             num_boost_round=5000,
             early_stopping_rounds=200,
             valid_sets=[train_set, val_set],
-            verbose_eval=200)
+            verbose_eval=50)
     # モデル書き出し
     model_path = os.path.join(result_dir, f'model_days{days}_val{num}.lgb')
     model.save_model(model_path)
