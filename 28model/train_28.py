@@ -20,7 +20,7 @@ extract_test_day = datetime.datetime(2016, 4, 24) + datetime.timedelta(days=days
 extract_test_day = extract_test_day.strftime('%Y-%m-%d')
 print(extract_test_day)
 
-result_dir = f'./result/28model/no_price_shop_cumsum_zerodem_dem_shop_std_week_trend_4weekstat_more_lag_ch_kernel_params/day{days}'
+result_dir = f'./result/28model/no_price_shop_cumsum_zerodem_dem_shop_std_week_trend_4weekstat_more_lag_ch_kernel_params_rm_ch_cate/day{days}'
 os.makedirs(result_dir, exist_ok=True)
 print(result_dir)
 
@@ -132,6 +132,11 @@ print('date_feature:{0}'.format(t1-t0) + '[sec]')
 print('########################')
 ########################
 
+print('rm_christomas...', df_all.shape)
+christomas_days = [datetime.datetime(2012, 12, 25), datetime.datetime(2013, 12, 25), datetime.datetime(2014, 12, 25), datetime.datetime(2015, 12, 25)]
+df_all = df_all[~df_all['date'].isin(christomas_days)]
+print(df_all.shape)
+
 
 ########################
 # setting_feature
@@ -166,7 +171,7 @@ print('########################')
 ########################
 print('########################')
 print('train')
-
+cat_features = ['item_id', 'dept_id', 'cat_id', 'store_id', 'state_id', 'event_name_1', 'event_type_1', 'event_name_2', 'event_type_2']
 tr_val_date = {
     '1st': {
         'train_end_date': '2016-02-28',
@@ -239,8 +244,8 @@ for num in ['1st', '2nd']:
         train_fold_df = sales_train_validation.copy()  # weightの期間を変更
         valid_fold_df = sales_train_validation.iloc[:, -28:].copy()
 
-    train_set = lgb.Dataset(df_train[x_features], df_train[target_col], weight=ajust_weight_train)
-    val_set = lgb.Dataset(df_val[x_features], df_val[target_col], weight=ajust_weight_val)
+    train_set = lgb.Dataset(df_train[x_features], df_train[target_col], weight=ajust_weight_train, categorical_feature=cat_features)
+    val_set = lgb.Dataset(df_val[x_features], df_val[target_col], weight=ajust_weight_val, categorical_feature=cat_features)
     print('start_learn')
     evals_result = {}
     model = lgb.train(
