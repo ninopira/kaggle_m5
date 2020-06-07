@@ -14,7 +14,7 @@ import pandas as pd
 from reduce_mem import reduce_mem_usage
 warnings.filterwarnings('ignore')
 
-nrows = int(365 * 3 * 30490)   # day * 3.5year * item
+nrows = int(365 * 3 * 30490)   # day * 3year * item
 
 ########################
 print('########################')
@@ -129,10 +129,10 @@ print('########################')
 print('########################')
 print('merge with product table for test data')
 t0 = time.time()
-test2['id'] = test2['id'].str.replace('_evaluation', '_validation')
+# test2['id'] = test2['id'].str.replace('_evaluation', '_validation')
 test1 = test1.merge(product, how='left', on='id')
 test2 = test2.merge(product, how='left', on='id')
-test2['id'] = test2['id'].str.replace('_validation', '_evaluation')
+# test2['id'] = test2['id'].str.replace('_validation', '_evaluation')
 print('test_1_shape:{}'.format(test1.shape))
 print('test_2_shape:{}'.format(test2.shape))
 t1 = time.time()
