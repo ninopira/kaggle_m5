@@ -15,6 +15,9 @@ import pandas as pd
 from reduce_mem import reduce_mem_usage
 from metric import WRMSSEEvaluator
 
+import warnings
+warnings.filterwarnings('ignore')
+
 
 @click.command()
 @click.argument('days', type=int)
@@ -30,14 +33,11 @@ def train(days, short_mode):
 
     if short_mode:
         result_dir = f'./result/short/base/day{days}'
-        num_boost_round = 10
     else:
         result_dir = f'./result/base/day{days}'
-        num_boost_round = 5000
 
     os.makedirs(result_dir, exist_ok=True)
     print(result_dir)
-
 
     ########################
     print('########################')
@@ -83,26 +83,26 @@ def train(days, short_mode):
         './feature/cumsum/f_id_cumsum_demand_90.pkl',
         './feature/cumsum/f_id_cumsum_demand_120.pkl',
         './feature/cumsum/f_id_cumsum_demand_180.pkl',
-        # './feature/cumsum/f_id_cumsum_demand_220.pkl',
-        # './feature/cumsum/f_id_cumsum_demand_364.pkl',
-        # # lag demnad
-        # f'./feature/lag_demand/f_id_demand_lag_{days}.pkl',
-        # f'./feature/lag_demand/f_id_demand_lag_{days+1}.pkl',
-        # f'./feature/lag_demand/f_id_demand_lag_{days+2}.pkl',
-        # f'./feature/lag_demand/f_id_lag_demand_{days}_roll.pkl',
+        './feature/cumsum/f_id_cumsum_demand_220.pkl',
+        './feature/cumsum/f_id_cumsum_demand_364.pkl',
+        # lag demnad
+        f'./feature/lag_demand/f_id_demand_lag_{days}.pkl',
+        f'./feature/lag_demand/f_id_demand_lag_{days+1}.pkl',
+        f'./feature/lag_demand/f_id_demand_lag_{days+2}.pkl',
+        f'./feature/lag_demand/f_id_lag_demand_{days}_roll.pkl',
         # # lag sales
-        # './feature/lag_sales/f_id_lag_sales.pkl',
+        './feature/lag_sales/f_id_lag_sales.pkl',
         # # shop
-        # f'./feature/shop/f_diff_ave_lag{days}demand_day_store_dept_no_rolling.pkl',
-        # f'./feature/shop/f_devine_ave_lag{days}demand_day_store_dept_no_roll.pkl',
-        # './feature/shop/f_diff_ave_sales_day_store_dept.pkl',
-        # './feature/shop/f_diff_ave_sales_day_store_dept_std.pkl',
-        # # trend_week
-        # f'./feature/trend_week/f_week_trend_{days}.pkl',
-        # # zero dem
-        # f'./feature/zero_demand/f_zero_demand_{days}.pkl',
+        f'./feature/shop/f_diff_ave_lag{days}demand_day_store_dept_no_rolling.pkl',
+        f'./feature/shop/f_devine_ave_lag{days}demand_day_store_dept_no_roll.pkl',
+        './feature/shop/f_diff_ave_sales_day_store_dept.pkl',
+        './feature/shop/f_diff_ave_sales_day_store_dept_std.pkl',
+        # trend_week
+        f'./feature/trend_week/f_week_trend_{days}.pkl',
+        # zero dem
+        f'./feature/zero_demand/f_zero_demand_{days}.pkl',
         # 4weeks。未作成
-        # f'./feature/lag4weeks/f_id_lag_demand_4weekdays_stat_{days}.pkl'
+        f'./feature/lag_4weeks/f_id_lag_demand_4weekdays_stat_{days}.pkl'
     ]
 
     for f_path in f_paths:
@@ -201,6 +201,7 @@ def train(days, short_mode):
     print('sep_test...')
     df_test = df_all.query('date > "2016-05-22"')
     df_test_old = df_all.query('date > "2016-04-24" and date <= "2016-05-22"')
+    print('test_shape', df_test.shape, 'test_old_shape', df_test_old.shape)
     # https://www.kaggle.com/ejunichi/m5-three-shades-of-dark-darker-magic
     params = {
         'boosting_type': 'gbdt',
@@ -214,7 +215,6 @@ def train(days, short_mode):
         'min_data_in_leaf': 2**12-1,
         'feature_fraction': 0.5,
         'max_bin': 100,
-        'n_estimators': 1400,
         'boost_from_average': False,
         'verbose': -1}
 
@@ -227,16 +227,13 @@ def train(days, short_mode):
         pred_df = pd.pivot(pred_df, index='id', columns='date', values='demand').reset_index()
         return pred_df
 
-    model_list = []
-    imp_df_list = []
-    evaluator_list = []
     wrmsse_score_list = []
-    eval_result_list = []
 
     t0_all = time.time()
     print('train_main...')
     for num in ['1st', '2nd', '3rd']:
         print('########################')
+        print('*'*20, num, '*'*20)
         t0 = time.time()
         df_test['demand'] = 0
         df_test_old['demand'] = 0
@@ -253,25 +250,34 @@ def train(days, short_mode):
 
         if num == '1st':
             train_fold_df = sales_train_validation.copy()  # weightの期間を変更
-            valid_fold_df = sales_train_validation.iloc[:, -84:-28].copy()
+            valid_fold_df = sales_train_validation.iloc[:, -84:-56].copy()
         elif num == '2nd':
             train_fold_df = sales_train_validation.copy()  # weightの期間を変更
             valid_fold_df = sales_train_validation.iloc[:, -56:-28].copy()
         else:
             train_fold_df = sales_train_validation.copy()  # weightの期間を変更
-            valid_fold_df = sales_train_validation.iloc[:, -28].copy()
+            valid_fold_df = sales_train_validation.iloc[:, -28:].copy()
 
         train_set = lgb.Dataset(df_train[x_features], df_train[target_col], weight=ajust_weight_train)
         val_set = lgb.Dataset(df_val[x_features], df_val[target_col], weight=ajust_weight_val)
         print('start_learn')
-        evals_result = {}
-        model = lgb.train(
-                params,
-                train_set,
-                num_boost_round=num_boost_round,
-                early_stopping_rounds=200,
-                valid_sets=[train_set, val_set],
-                verbose_eval=50)
+        if short_mode:
+            print('short_mode')
+            model = lgb.train(
+                    params,
+                    train_set,
+                    num_boost_round=10,
+                    early_stopping_rounds=200,
+                    valid_sets=[train_set, val_set],
+                    verbose_eval=2)
+        else:
+            model = lgb.train(
+                    params,
+                    train_set,
+                    num_boost_round=5000,
+                    early_stopping_rounds=200,
+                    valid_sets=[train_set, val_set],
+                    verbose_eval=50)
         # モデル書き出し
         model_path = os.path.join(result_dir, f'model_days{days}_val{num}.lgb')
         model.save_model(model_path)
@@ -287,7 +293,7 @@ def train(days, short_mode):
         extract_val_day = extract_val_day.strftime('%Y-%m-%d')
         print(extract_val_day)
         df_val_extract = df_val.query('date == @extract_val_day')
-        print('extract_day', df_val_extract['date'].unique(), df_val_extract.shape)
+        print('extract_val_day', df_val_extract['date'].unique(), df_val_extract.shape)
         val_pkl_path = os.path.join(result_dir, f'days{days}_val{num}.pkl')
         print(val_pkl_path)
         df_val_extract.to_pickle(val_pkl_path)
@@ -304,13 +310,13 @@ def train(days, short_mode):
         # days後だけ取り出す
         print('extract_test')
         df_test_extract = df_test.query('date == @extract_test_day')
-        print('extract_day', df_test_extract['date'].unique(), df_test_extract.shape)
+        print('extract_test_day', df_test_extract['date'].unique(), df_test_extract.shape)
         val_pkl_path = os.path.join(result_dir, f'days{days}_test_{num}.pkl')
         print(val_pkl_path)
         df_test_extract.to_pickle(val_pkl_path)
         print('extract_test_old')
         df_test_old_extract = df_test_old.query('date == @extract_test_old_day')
-        print('extract_day', df_test_old_extract['date'].unique(), df_test_old_extract.shape)
+        print('extract_test_old_day', df_test_old_extract['date'].unique(), df_test_old_extract.shape)
         val_pkl_path = os.path.join(result_dir, f'days{days}_test_old_{num}.pkl')
         print(val_pkl_path)
         df_test_old_extract.to_pickle(val_pkl_path)
@@ -334,16 +340,11 @@ def train(days, short_mode):
 
         save_importances(importances)
 
-        model_list.append(model)
-        imp_df_list.append(importances)
-        eval_result_list.append(evals_result)
-
         # WRMSSEの算出
         if days == 28:
             # インスタンスの作成
             print('build_evaluater...')
             evaluator = WRMSSEEvaluator(train_fold_df, valid_fold_df, calendar, sell_prices)
-            evaluator_list.append(evaluator)
             print('wrmsse...')
             id_columns = ['id', 'item_id', 'dept_id', 'cat_id', 'store_id', 'state_id']
             X_val_wide = pred_and_convert_wide(df_val)
@@ -360,29 +361,24 @@ def train(days, short_mode):
 
             # test書き出し
             print('write_test')
-            def predict(test, submission, csv_path, test_old=None):
+            def predict(test, submission, csv_path):
                 predictions = test[['id', 'date', 'demand']]
                 predictions = pd.pivot(predictions, index='id', columns='date', values='demand').reset_index()
                 predictions.columns = ['id'] + ['F' + str(i + 1) for i in range(28)]
                 evaluation = submission[['id']].merge(predictions, on='id')
-                if test_old is not None:
-                    predictions_old = test_old[['id', 'date', 'demand']]
-                    predictions_old = pd.pivot(predictions_old, index='id', columns='date', values='demand').reset_index()
-                    predictions_old.columns = ['id'] + ['F' + str(i + 1) for i in range(28)]
-                    validation = submission[['id']].merge(predictions_old, on='id')
-                else:
-                    validation_rows = [row for row in submission['id'] if 'validation' in row]
-                    validation = submission[submission['id'].isin(validation_rows)]
+
+                validation_rows = [row for row in submission['id'] if 'validation' in row]
+                validation = submission[submission['id'].isin(validation_rows)]
                 final = pd.concat([validation, evaluation])
                 print(final.head())
                 print(final.tail())
                 print(final.shape)
                 final.to_csv(csv_path, index=False)
 
-            submission = pd.read_csv('../input/sample_submission.csv')
-            csv_path = os.path.join(result_dir, 'sub_28_{}_WRMSSE_{}_{}.csv'.format(num, wrmsse_score_list[0], wrmsse_score_list[1]))
+            submission = pd.read_csv('../new_input/sample_submission.csv')
+            csv_path = os.path.join(result_dir, 'sub_28_{}_WRMSSE_{}.csv'.format(num, wrmsse_score))
             print(csv_path)
-            predict(df_test, submission, csv_path, df_test_old)
+            predict(df_test, submission, csv_path)
 
         t1 = time.time()
         print('train_{}:{}'.format(num, t1-t0) + '[sec]')

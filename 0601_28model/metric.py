@@ -6,7 +6,7 @@ from typing import Union
 
 import numpy as np
 import pandas as pd
-from tqdm.notebook import tqdm_notebook as tqdm
+from tqdm import tqdm
 
 
 class WRMSSEEvaluator(object):
