@@ -205,7 +205,8 @@ def train(days, short_mode):
     # https://www.kaggle.com/ejunichi/m5-three-shades-of-dark-darker-magic
     params = {
         'boosting_type': 'gbdt',
-        'objective': 'poisson',
+        # 'objective': 'poisson',
+        'objective': 'rmse',
         # 'tweedie_variance_power': 1.1,
         'metric': 'rmse',
         'subsample': 0.5,
