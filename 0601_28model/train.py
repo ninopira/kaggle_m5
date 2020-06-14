@@ -32,9 +32,9 @@ def train(days, short_mode):
     print('*'*20, extract_test_old_day, '*'*20)
 
     if short_mode:
-        result_dir = f'./result/short/base/day{days}'
+        result_dir = f'./result/short/base/rm_zero/day{days}'
     else:
-        result_dir = f'./result/base/day{days}'
+        result_dir = f'./result/base/rm_zero/day{days}'
 
     os.makedirs(result_dir, exist_ok=True)
     print(result_dir)
@@ -100,7 +100,7 @@ def train(days, short_mode):
         # trend_week
         f'./feature/trend_week/f_week_trend_{days}.pkl',
         # zero dem
-        f'./feature/zero_demand/f_zero_demand_{days}.pkl',
+        # f'./feature/zero_demand/f_zero_demand_{days}.pkl',
         # 4weeks。未作成
         f'./feature/lag_4weeks/f_id_lag_demand_4weekdays_stat_{days}.pkl'
     ]
