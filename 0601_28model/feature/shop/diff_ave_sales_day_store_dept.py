@@ -5,7 +5,7 @@ sys.path.append('../../')
 
 
 print('read_transformed...')
-df_all = pd.read_pickle('../../scaled_35093990_33386550_melt_over0sellprice.pkl')
+df_all = pd.read_pickle('../../scaled_39804695_38950975_melt_over0sellprice.pkl')
 print(df_all.shape)
 
 df_all = df_all[['id', 'date', 'store_id', 'dept_id', 'sell_price']]
