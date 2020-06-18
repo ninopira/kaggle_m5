@@ -32,9 +32,9 @@ def train(days, short_mode):
     print('*'*20, extract_test_old_day, '*'*20)
 
     if short_mode:
-        result_dir = f'./result/short/rm_ch_apply_cate/day{days}'
+        result_dir = f'./result/short/rm_ch_apply_cate_be_af/day{days}'
     else:
-        result_dir = f'./result/rm_ch_apply_cate/day{days}'
+        result_dir = f'./result/rm_ch_apply_cate_be_af/day{days}'
 
     os.makedirs(result_dir, exist_ok=True)
     print(result_dir)
@@ -78,6 +78,7 @@ def train(days, short_mode):
     t0_all = time.time()
 
     f_paths = [
+        f'./feature/be_af_event/f_be_af.pkl'
         # cumsum'
         f'./feature/cumsum/f_id_cumsum_demand_{days}.pkl',
         './feature/cumsum/f_id_cumsum_demand_90.pkl',
