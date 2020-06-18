@@ -32,9 +32,9 @@ def train(days, short_mode):
     print('*'*20, extract_test_old_day, '*'*20)
 
     if short_mode:
-        result_dir = f'./result/short/base/day{days}'
+        result_dir = f'./result/short/rm_ch_apply_cate/day{days}'
     else:
-        result_dir = f'./result/base/day{days}'
+        result_dir = f'./result/rm_ch_apply_cate/day{days}'
 
     os.makedirs(result_dir, exist_ok=True)
     print(result_dir)
@@ -90,6 +90,7 @@ def train(days, short_mode):
         f'./feature/lag_demand/f_id_demand_lag_{days+1}.pkl',
         f'./feature/lag_demand/f_id_demand_lag_{days+2}.pkl',
         f'./feature/lag_demand/f_id_lag_demand_{days}_roll.pkl',
+        './feature/lag_demand/f_id_lag_demand_350_roll_28.pkl',
         # # lag sales
         './feature/lag_sales/f_id_lag_sales.pkl',
         # # shop
@@ -144,6 +145,11 @@ def train(days, short_mode):
     print('date_feature:{0}'.format(t1-t0) + '[sec]')
     print('########################')
     ########################
+
+    print('rm_christomas...', df_all.shape)
+    christomas_days = [datetime.datetime(2012, 12, 25), datetime.datetime(2013, 12, 25), datetime.datetime(2014, 12, 25), datetime.datetime(2015, 12, 25)]
+    df_all = df_all[~df_all['date'].isin(christomas_days)]
+    print(df_all.shape)
 
 
     ########################
@@ -221,6 +227,8 @@ def train(days, short_mode):
 
     print(params)
 
+    cat_features = ['item_id', 'dept_id', 'cat_id', 'store_id', 'state_id', 'event_name_1', 'event_type_1', 'event_name_2', 'event_type_2']
+
     # 元dfに対して予測して、wide_formatで返す関数
     def pred_and_convert_wide(df_features):
         pred_df = df_features[['id', 'date', 'demand']]
@@ -259,8 +267,8 @@ def train(days, short_mode):
             train_fold_df = sales_train_validation.copy()  # weightの期間を変更
             valid_fold_df = sales_train_validation.iloc[:, -28:].copy()
 
-        train_set = lgb.Dataset(df_train[x_features], df_train[target_col], weight=ajust_weight_train)
-        val_set = lgb.Dataset(df_val[x_features], df_val[target_col], weight=ajust_weight_val)
+        train_set = lgb.Dataset(df_train[x_features], df_train[target_col], weight=ajust_weight_train, categorical_feature=cat_features)
+        val_set = lgb.Dataset(df_val[x_features], df_val[target_col], weight=ajust_weight_val, categorical_feature=cat_features)
         print('start_learn')
         if short_mode:
             print('short_mode')
