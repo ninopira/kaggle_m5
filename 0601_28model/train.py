@@ -32,9 +32,9 @@ def train(days, short_mode):
     print('*'*20, extract_test_old_day, '*'*20)
 
     if short_mode:
-        result_dir = f'./result/short/rm_ch_apply_cate/day{days}'
+        result_dir = f'./result/short/rm_ch_apply_cate_pente/day{days}'
     else:
-        result_dir = f'./result/rm_ch_apply_cate/day{days}'
+        result_dir = f'./result/rm_ch_apply_cate_pente/day{days}'
 
     os.makedirs(result_dir, exist_ok=True)
     print(result_dir)
@@ -78,6 +78,8 @@ def train(days, short_mode):
     t0_all = time.time()
 
     f_paths = [
+        # pentecost_dates
+        f'./feature/pente/f_pente.pkl',
         # cumsum'
         f'./feature/cumsum/f_id_cumsum_demand_{days}.pkl',
         './feature/cumsum/f_id_cumsum_demand_90.pkl',
@@ -227,7 +229,7 @@ def train(days, short_mode):
 
     print(params)
 
-    cat_features = ['item_id', 'dept_id', 'cat_id', 'store_id', 'state_id', 'event_name_1', 'event_type_1', 'event_name_2', 'event_type_2']
+    cat_features = ['item_id', 'dept_id', 'cat_id', 'store_id', 'state_id', 'event_name_1', 'event_type_1', 'event_name_2', 'event_type_2', 'pente']
 
     # 元dfに対して予測して、wide_formatで返す関数
     def pred_and_convert_wide(df_features):
