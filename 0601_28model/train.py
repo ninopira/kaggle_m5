@@ -80,7 +80,8 @@ def train(days, short_mode):
     print('merge_event...')
     df_f = pd.read_pickle('./feature/NBA_before_day/f_add_final_1s_name_type_1.pkl')
     df_all = df_all.drop(['event_name_1', 'event_type_1'], axis=1)
-    df_all = pd.merge(df_all, df_f, on=['id', 'date'], how='left')
+    df_all['event_name_1'] = df_f['event_name_1']
+    df_all['event_type_1'] = df_f['event_type_1']
     print('done')
 
     f_paths = [
