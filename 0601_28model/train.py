@@ -32,9 +32,9 @@ def train(days, short_mode):
     print('*'*20, extract_test_old_day, '*'*20)
 
     if short_mode:
-        result_dir = f'./result/short/rm_ch_apply_cate/day{days}'
+        result_dir = f'./result/short/rm_ch_apply_cate_nba/day{days}'
     else:
-        result_dir = f'./result/rm_ch_apply_cate/day{days}'
+        result_dir = f'./result/rm_ch_apply_cate_nba/day{days}'
 
     os.makedirs(result_dir, exist_ok=True)
     print(result_dir)
@@ -76,6 +76,12 @@ def train(days, short_mode):
     print('merge_features...')
     print('before_merged_shape:{}'.format(df_all.shape))
     t0_all = time.time()
+
+    print('merge_event...')
+    df_f = pd.read_pickle('./feature/NBA_before_day/f_add_final_1s_name_type_1.pkl')
+    df_all = df_all.drop(['event_name_1', 'event_type_1'], axis=1)
+    df_all = pd.merge(df_all, df_f, on=['id', 'date'], how='left')
+    print('done')
 
     f_paths = [
         # cumsum'
