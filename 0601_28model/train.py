@@ -32,9 +32,9 @@ def train(days, short_mode):
     print('*'*20, extract_test_old_day, '*'*20)
 
     if short_mode:
-        result_dir = f'./result/short/rm_ch_apply_cate_be_af/day{days}'
+        result_dir = f'./result/short/rm_ch_apply_cate_be_af_rm_zero/day{days}'
     else:
-        result_dir = f'./result/rm_ch_apply_cate_be_af/day{days}'
+        result_dir = f'./result/rm_ch_apply_cate_be_af_rm_zero/day{days}'
 
     os.makedirs(result_dir, exist_ok=True)
     print(result_dir)
@@ -78,7 +78,7 @@ def train(days, short_mode):
     t0_all = time.time()
 
     f_paths = [
-        f'./feature/be_af_event/f_be_af.pkl'
+        f'./feature/be_af_event/f_be_af.pkl',
         # cumsum'
         f'./feature/cumsum/f_id_cumsum_demand_{days}.pkl',
         './feature/cumsum/f_id_cumsum_demand_90.pkl',
@@ -102,7 +102,7 @@ def train(days, short_mode):
         # trend_week
         f'./feature/trend_week/f_week_trend_{days}.pkl',
         # zero dem
-        f'./feature/zero_demand/f_zero_demand_{days}.pkl',
+        # f'./feature/zero_demand/f_zero_demand_{days}.pkl',
         # 4weeks。未作成
         f'./feature/lag_4weeks/f_id_lag_demand_4weekdays_stat_{days}.pkl'
     ]
@@ -285,7 +285,7 @@ def train(days, short_mode):
                     params,
                     train_set,
                     num_boost_round=5000,
-                    early_stopping_rounds=200,
+                    early_stopping_rounds=50,
                     valid_sets=[train_set, val_set],
                     verbose_eval=50)
         # モデル書き出し
