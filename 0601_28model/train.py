@@ -32,9 +32,9 @@ def train(days, short_mode):
     print('*'*20, extract_test_old_day, '*'*20)
 
     if short_mode:
-        result_dir = f'./result/short/rm_ch_apply_cate_be_af_rm_zero/day{days}'
+        result_dir = f'./result/short/rm_ch_apply_cate_be_af_rm_zero_poisson/day{days}'
     else:
-        result_dir = f'./result/rm_ch_apply_cate_be_af_rm_zero/day{days}'
+        result_dir = f'./result/rm_ch_apply_cate_be_af_rm_zero_poisson/day{days}'
 
     os.makedirs(result_dir, exist_ok=True)
     print(result_dir)
@@ -212,8 +212,8 @@ def train(days, short_mode):
     # https://www.kaggle.com/ejunichi/m5-three-shades-of-dark-darker-magic
     params = {
         'boosting_type': 'gbdt',
-        # 'objective': 'poisson',
-        'objective': 'rmse',
+        'objective': 'poisson',
+        # 'objective': 'rmse',
         # 'tweedie_variance_power': 1.1,
         'metric': 'rmse',
         'subsample': 0.5,
