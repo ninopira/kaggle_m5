@@ -3,9 +3,12 @@
 - valを読み込んでcv値の算出
 - テストデータを読み込んでsub.csvの作成
 """
+import datetime
 import os
 import time
 
+from matplotlib import pyplot as plt
+import numpy as np
 import pandas as pd
 
 from metric import WRMSSEEvaluator
@@ -43,12 +46,14 @@ tr_val_date = {
 
 # valの読み込み
 print('val')
-wrmsse_score_list = []
+wrmsse_score_dict = {}
 for num in ['1st', '2nd', '3rd']:
+    print('########################')
+    print('*'*20, num, '*'*20)
     df_vals = pd.DataFrame()
     for days in range(1, 29):
         print('days', days)
-        result_dir = f'./result/base/day{days}'
+        result_dir = f'./result/rm_ch_apply_cate_be_af_rm_zero_poisson/day{days}'
         val_pkl_path = os.path.join(result_dir, f'days{days}_val{num}.pkl')
         df_val_extract = pd.read_pickle(val_pkl_path)
         print(num, 'extract_day', df_val_extract['date'].unique(), df_val_extract.shape)
@@ -76,20 +81,25 @@ for num in ['1st', '2nd', '3rd']:
     df_vals.columns = ['id'] + ['d_' + str(i + 1) for i in range(tr_val_date[num]['train_end_date_num'], tr_val_date[num]['train_end_date_num']+28)]
     id_columns = ['id', 'item_id', 'dept_id', 'cat_id', 'store_id', 'state_id']
     valid_preds = pd.merge(train_fold_df[id_columns].copy(), df_vals, how="left", on="id")
+    print(valid_preds.head())
+    print(valid_preds.shape)
     wrmsse_score = evaluator.score(valid_preds.drop(id_columns, axis=1))
-    wrmsse_score_list.append(wrmsse_score)
+    wrmsse_score_dict[num] = wrmsse_score
+    valid_preds.to_csv(f'./result/rm_ch_apply_cate_be_af_rm_zero_poisson/concat_val_{num}_{wrmsse_score}.csv', index=False)
     print(num, "WRMSSE：", round(wrmsse_score, 4))
 
-print(wrmsse_score_list)
+print(wrmsse_score)
 
 print('test')
 for num in ['1st', '2nd', '3rd']:
+    print('########################')
+    print('*'*20, num, '*'*20)
     df_tests = pd.DataFrame()
     for days in range(1, 29):
         print('days', days)
-        result_dir = f'./result/base/day{days}'
+        result_dir = f'./result/rm_ch_apply_cate_be_af_rm_zero_poisson/day{days}'
         test_pkl_path = os.path.join(result_dir, f'days{days}_test_{num}.pkl')
-        df_test_extract = pd.read_pickle(test_pkl_path)
+        df_test_extract = pd.read_pickle(test_pkl_path)[['id', 'date', 'demand']]
         print(num, 'extract_day', df_test_extract['date'].unique(), df_test_extract.shape)
 
         if len(df_tests) == 0:
@@ -99,6 +109,24 @@ for num in ['1st', '2nd', '3rd']:
 
     print('all_day_concat', df_tests['date'].unique(), len(df_tests['date'].unique()), df_vals.shape)
 
+    # 何故かtrain.pyでscaleが元に戻っていないので対処療法
+    df_scale_weight = pd.read_pickle('./scale_weight.pkl')
+    df_tests = df_tests.merge(df_scale_weight, on=['id'], how='left')
+    df_tests['demand'] = df_tests["demand"] * np.sqrt(df_tests["scale"])
+
+    fig = plt.figure(figsize=(40, 16))
+    ax = fig.add_subplot(1, 1, 1)
+    df_tmp = df_tests.copy()
+    df_tmp['date'] = pd.to_datetime(df_tmp['date'])
+    df_tmp = df_tmp.groupby('date')[['demand']].sum().reset_index()
+    for target in ['demand']:
+        ax.plot(df_tmp['date'], df_tmp[target], label=target, marker="o")
+        ax.legend(fontsize='20')
+    ax.axvline(datetime.datetime(2016, 5, 30), color='blue', linestyle='--', alpha=0.4)  # Natioonal day
+    ax.axvline(datetime.datetime(2016, 6, 2), color='green', linestyle='--', alpha=0.4)  # NBA
+    ax.axvline(datetime.datetime(2016, 6, 7), color='orange', linestyle='--', alpha=0.4)  # ラマダン
+    ax.axvline(datetime.datetime(2016, 6, 19), color='green', linestyle='--', alpha=0.4)  # NBA
+    plt.savefig(f'./result/rm_ch_apply_cate_be_af_rm_zero_poisson/sub_{num}_WRMSSE_{wrmsse_score_dict[num]}.png')
 
     def predict(test, submission, csv_path):
         predictions = test[['id', 'date', 'demand']]
@@ -114,16 +142,7 @@ for num in ['1st', '2nd', '3rd']:
         print(final.shape)
         final.to_csv(csv_path, index=False)
 
-
-    result_dir = f'./result/base/'
-
+    result_dir = f'./result/rm_ch_apply_cate_be_af_rm_zero_poisson/'
     submission = pd.read_csv('../input/sample_submission.csv')
-    csv_path = os.path.join(result_dir, 'sub_{}_WRMSSE_{}_{}_{}.csv'.format(num, wrmsse_score_list[0], wrmsse_score_list[1], wrmsse_score_list[2]))
+    csv_path = os.path.join(result_dir, 'sub_{}_WRMSSE_{}.csv'.format(num, wrmsse_score_dict[num]))
     predict(df_tests, submission, csv_path)
-
-
-
-
-
-
-
