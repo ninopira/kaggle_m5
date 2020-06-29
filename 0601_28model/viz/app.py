@@ -59,27 +59,29 @@ def main():
         st.text('write_pickle...')
         df_all.to_pickle('df_all_small.pkl')
 
+
     st.text('read_pkl...')
     df_sub_final = pd.read_pickle('df_sub_final.pkl')
+
+    st.text('sub_tail')
+    st.dataframe(df_sub_final.tail(100))
 
     st.text('read_train_data_pkl...')
     df_all = pd.read_pickle('./df_all_small.pkl')
     st.text('all_data_tail')
     st.dataframe(df_all.tail(100))
 
-    viz(df_sub_final, df_all)
-
-
-def viz(df_sub_final, df_all):
-    st.text('sub_tail')
-    st.dataframe(df_sub_final.tail(100))
+    selected_depts = st.multiselect('select dept', df_sub_final['dept_id'].unique())
+    selected_items = st.multiselect('select item', df_sub_final[df_sub_final['dept_id'].isin(selected_depts)]['item_id'].unique())
 
     st.header('visualize')
+    viz(df_sub_final, df_all, selected_items)
+
+
+def viz(df_sub_final, df_all, selected_items):
     fig = viz_pred(df_sub_final, ['demand', 'demand_1.4'], title='all')
     st.pyplot(fig)
 
-    selected_depts = st.multiselect('select dept', df_sub_final['dept_id'].unique())
-    selected_items = st.multiselect('select item', df_sub_final[df_sub_final['dept_id'].isin(selected_depts)]['item_id'].unique())
     fig = filter_item_id_viz_pred(df_sub_final, ['demand', 'demand_1.4'], selected_items)
     st.pyplot(fig)
 
